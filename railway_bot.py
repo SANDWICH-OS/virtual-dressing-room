@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Production bot for Railway deployment
+Railway production bot - упрощенная версия
 """
 
 import os
@@ -32,10 +32,8 @@ class UserStates:
     waiting_for_full_body = "waiting_for_full_body"
     waiting_for_clothing = "waiting_for_clothing"
 
-# Функции для работы с БД
 def get_db_connection():
     """Получить соединение с БД"""
-    # В production используем PostgreSQL, в dev - SQLite
     db_url = os.getenv("DATABASE_URL", "sqlite:///./virtual_tryon.db")
     
     if db_url.startswith("postgres://") or db_url.startswith("postgresql://"):
@@ -91,40 +89,6 @@ def init_database():
                     FOREIGN KEY (user_id) REFERENCES users (id)
                 )
             """)
-            
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS tryon_requests (
-                    id SERIAL PRIMARY KEY,
-                    user_id INTEGER NOT NULL,
-                    user_photo_id INTEGER NOT NULL,
-                    clothing_photo_id INTEGER NOT NULL,
-                    result_photo_url TEXT,
-                    status VARCHAR(50) DEFAULT 'pending',
-                    error_message TEXT,
-                    ai_model_used VARCHAR(255),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users (id),
-                    FOREIGN KEY (user_photo_id) REFERENCES user_photos (id),
-                    FOREIGN KEY (clothing_photo_id) REFERENCES user_photos (id)
-                )
-            """)
-            
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS payments (
-                    id SERIAL PRIMARY KEY,
-                    user_id INTEGER NOT NULL,
-                    amount DECIMAL(10,2) NOT NULL,
-                    currency VARCHAR(10) DEFAULT 'RUB',
-                    status VARCHAR(50) DEFAULT 'pending',
-                    payment_type VARCHAR(50) NOT NULL,
-                    yoomoney_payment_id VARCHAR(255),
-                    description TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users (id)
-                )
-            """)
         else:
             # SQLite
             cursor.execute("""
@@ -148,40 +112,6 @@ def init_database():
                     photo_url TEXT NOT NULL,
                     photo_type TEXT NOT NULL,
                     cloudinary_public_id TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users (id)
-                )
-            """)
-            
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS tryon_requests (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    user_photo_id INTEGER NOT NULL,
-                    clothing_photo_id INTEGER NOT NULL,
-                    result_photo_url TEXT,
-                    status TEXT DEFAULT 'pending',
-                    error_message TEXT,
-                    ai_model_used TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users (id),
-                    FOREIGN KEY (user_photo_id) REFERENCES user_photos (id),
-                    FOREIGN KEY (clothing_photo_id) REFERENCES user_photos (id)
-                )
-            """)
-            
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS payments (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    amount DECIMAL(10,2) NOT NULL,
-                    currency TEXT DEFAULT 'RUB',
-                    status TEXT DEFAULT 'pending',
-                    payment_type TEXT NOT NULL,
-                    yoomoney_payment_id TEXT,
-                    description TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users (id)
@@ -255,10 +185,16 @@ def save_photo(user_id, photo_url, photo_type):
     cursor = conn.cursor()
     
     try:
-        cursor.execute("""
-            INSERT INTO user_photos (user_id, photo_url, photo_type)
-            VALUES (%s, %s, %s)
-        """, (user_id, photo_url, photo_type))
+        if os.getenv("DATABASE_URL", "").startswith("postgres"):
+            cursor.execute("""
+                INSERT INTO user_photos (user_id, photo_url, photo_type)
+                VALUES (%s, %s, %s)
+            """, (user_id, photo_url, photo_type))
+        else:
+            cursor.execute("""
+                INSERT INTO user_photos (user_id, photo_url, photo_type)
+                VALUES (?, ?, ?)
+            """, (user_id, photo_url, photo_type))
         conn.commit()
         photo_id = cursor.lastrowid
         logger.info(f"✅ Saved {photo_type} photo for user {user_id} (Photo ID: {photo_id})")
@@ -270,31 +206,10 @@ def save_photo(user_id, photo_url, photo_type):
     finally:
         conn.close()
 
-def get_user_photos(user_id):
-    """Получить фото пользователя"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
+async def railway_bot():
+    """Railway бот"""
     try:
-        cursor.execute("""
-            SELECT photo_type, photo_url, created_at 
-            FROM user_photos 
-            WHERE user_id = %s 
-            ORDER BY created_at DESC
-        """, (user_id,))
-        photos = cursor.fetchall()
-        return photos
-        
-    except Exception as e:
-        logger.error(f"❌ Error getting photos: {e}")
-        return []
-    finally:
-        conn.close()
-
-async def production_bot():
-    """Production бот для Railway"""
-    try:
-        logger.info("🚀 Starting Production Virtual Try-On Bot...")
+        logger.info("🚀 Starting Railway Virtual Try-On Bot...")
         
         # Проверяем токен
         bot_token = os.getenv("BOT_TOKEN")
@@ -310,7 +225,7 @@ async def production_bot():
         
         # Импортируем aiogram
         from aiogram import Bot, Dispatcher
-        from aiogram.types import Message, PhotoSize
+        from aiogram.types import Message
         from aiogram.filters import Command
         from aiogram.enums import ParseMode
         from aiogram.fsm.context import FSMContext
@@ -367,32 +282,29 @@ async def production_bot():
         # Обработчик команды /profile
         @dp.message(Command("profile"))
         async def profile_handler(message: Message):
-            # Получаем информацию о пользователе
             conn = get_db_connection()
             cursor = conn.cursor()
             
             try:
-                cursor.execute("""
-                    SELECT id, telegram_id, username, first_name, last_name, 
-                           subscription_type, generation_count, created_at
-                    FROM users 
-                    WHERE telegram_id = %s
-                """, (message.from_user.id,))
+                if os.getenv("DATABASE_URL", "").startswith("postgres"):
+                    cursor.execute("""
+                        SELECT id, telegram_id, username, first_name, last_name, 
+                               subscription_type, generation_count, created_at
+                        FROM users 
+                        WHERE telegram_id = %s
+                    """, (message.from_user.id,))
+                else:
+                    cursor.execute("""
+                        SELECT id, telegram_id, username, first_name, last_name, 
+                               subscription_type, generation_count, created_at
+                        FROM users 
+                        WHERE telegram_id = ?
+                    """, (message.from_user.id,))
                 user = cursor.fetchone()
                 
                 if not user:
                     await message.answer("❌ Пользователь не найден. Используйте /start")
                     return
-                
-                # Получаем фото пользователя
-                photos = get_user_photos(user[0])
-                
-                photo_info = []
-                for photo in photos:
-                    photo_info.append(f"• {photo[0]}: ✅")
-                
-                if not photo_info:
-                    photo_info = ["• Нет загруженных фото"]
                 
                 await message.answer(
                     f"👤 <b>Ваш профиль</b>\n\n"
@@ -401,7 +313,7 @@ async def production_bot():
                     f"👤 Имя: {user[3]} {user[4] or ''}\n"
                     f"💎 Подписка: {user[5]}\n"
                     f"🎨 Генераций: {user[6]}\n\n"
-                    f"📸 <b>Фото:</b>\n" + "\n".join(photo_info)
+                    f"📸 <b>Фото:</b> Загружено"
                 )
                 
             except Exception as e:
@@ -514,7 +426,7 @@ async def production_bot():
 
 async def main():
     """Главная функция"""
-    success = await production_bot()
+    success = await railway_bot()
     if not success:
         sys.exit(1)
 
