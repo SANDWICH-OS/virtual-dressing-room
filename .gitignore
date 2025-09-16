@@ -3,6 +3,10 @@
 .env.local
 .env.production
 
+# Local testing files
+virtual_tryon.db
+*.db
+
 # Python
 __pycache__/
 *.py[cod]

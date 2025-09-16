@@ -1,13 +1,14 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+import os
 
 
 class Settings(BaseSettings):
     # Telegram Bot
-    bot_token: str
+    bot_token: str = "test_token"  # Заглушка для тестов
     
     # Database
-    database_url: str
+    database_url: str = "sqlite:///./virtual_tryon.db"  # SQLite по умолчанию
     
     # Redis
     redis_url: str = "redis://localhost:6379"
@@ -32,6 +33,8 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = False
 
 
 settings = Settings()

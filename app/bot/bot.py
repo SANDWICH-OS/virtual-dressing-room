@@ -1,6 +1,5 @@
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
-from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from app.config import settings
 from app.services.redis_service import redis_service
@@ -17,7 +16,7 @@ async def create_bot():
     # Создаем бота
     bot = Bot(
         token=settings.bot_token,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        parse_mode=ParseMode.HTML
     )
     
     # Создаем диспетчер с Redis storage
