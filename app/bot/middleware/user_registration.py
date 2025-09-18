@@ -21,13 +21,26 @@ class UserRegistrationMiddleware(BaseMiddleware):
         
         user_id = event.from_user.id
         
-        # Получаем сессию БД
-        async with get_async_session() as session:
-            # Проверяем, зарегистрирован ли пользователь
-            user = await self.get_or_create_user(session, event.from_user)
-            
-            # Добавляем пользователя в данные для обработчиков
+        try:
+            # Получаем сессию БД
+            async with get_async_session() as session:
+                # Проверяем, зарегистрирован ли пользователь
+                user = await self.get_or_create_user(session, event.from_user)
+                
+                # Добавляем пользователя в данные для обработчиков
+                data["user"] = user
+        except Exception as e:
+            logger.error(f"❌ Database error in user registration middleware: {e}")
+            # Создаем фиктивного пользователя для продолжения работы
+            from app.models.user import User
+            user = User(
+                telegram_id=event.from_user.id,
+                username=event.from_user.username,
+                first_name=event.from_user.first_name,
+                last_name=event.from_user.last_name
+            )
             data["user"] = user
+            logger.warning("⚠️ Using fallback user object without database")
         
         # Выполняем обработчик
         return await handler(event, data)

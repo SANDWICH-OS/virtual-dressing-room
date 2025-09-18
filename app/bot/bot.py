@@ -6,6 +6,8 @@ from app.config import settings
 from app.services.redis_service import redis_service
 from app.bot.middleware import LoggingMiddleware, UserRegistrationMiddleware
 from app.bot.handlers import register_handlers
+from app.database.base import Base
+from app.database.connection import engine
 from loguru import logger
 
 # Определяем, какая конфигурация использовать
@@ -20,10 +22,25 @@ def get_settings():
         return settings
 
 
+async def init_database():
+    """Инициализация базы данных - создание таблиц"""
+    try:
+        # Создаем все таблицы
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("✅ Database tables created successfully")
+    except Exception as e:
+        logger.error(f"❌ Failed to create database tables: {e}")
+        logger.warning("⚠️ Bot will continue without database functionality")
+
+
 async def create_bot():
     """Создание и настройка бота"""
     # Получаем настройки в зависимости от окружения
     current_settings = get_settings()
+    
+    # Инициализируем базу данных
+    await init_database()
     
     # Получаем Redis URL из переменных окружения для Railway
     redis_url = os.getenv("REDIS_URL", current_settings.redis_url)
