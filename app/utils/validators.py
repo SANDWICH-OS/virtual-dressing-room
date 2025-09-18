@@ -37,7 +37,13 @@ class ImageValidator:
                     return False, f"Изображение недоступно (код: {response.status_code})"
                 
                 content_type = response.headers.get("content-type", "")
-                if not content_type.startswith("image/"):
+                # Telegram API часто возвращает application/octet-stream для изображений
+                # Проверяем также расширение файла для файлов от Telegram
+                is_telegram_file = "api.telegram.org" in url
+                is_image_content_type = content_type.startswith("image/")
+                is_octet_stream = content_type == "application/octet-stream"
+                
+                if not is_image_content_type and not (is_octet_stream and is_telegram_file):
                     logger.error(f"Invalid content type: {content_type}")
                     return False, "Файл не является изображением"
                 
