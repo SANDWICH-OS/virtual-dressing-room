@@ -7,16 +7,19 @@ class MainKeyboard:
     
     @staticmethod
     def get_main_menu() -> ReplyKeyboardMarkup:
-        """Главное меню"""
+        """Главное меню - состояние Авторизован"""
         builder = ReplyKeyboardBuilder()
         builder.add(
             KeyboardButton(text="👤 Мой профиль"),
-            KeyboardButton(text="🎨 Создать try-on"),
-            KeyboardButton(text="📸 Мои фото"),
+            KeyboardButton(text="📷 Загрузить фото пользователя"),
+            KeyboardButton(text="👗 Загрузить фото одежды"),
+            KeyboardButton(text="🤖 Тест VModel"),
+            KeyboardButton(text="👗 Тест Fashn"),
+            KeyboardButton(text="✂️ Тест Pixelcut"),
             KeyboardButton(text="💳 Подписка"),
             KeyboardButton(text="❓ Помощь")
         )
-        builder.adjust(2, 2, 1)
+        builder.adjust(2, 2, 2, 1, 1)
         return builder.as_markup(resize_keyboard=True)
     
     @staticmethod

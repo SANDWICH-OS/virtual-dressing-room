@@ -25,8 +25,10 @@ async def handle_photo(message: Message, state: FSMContext):
     elif current_state == UserStates.waiting_clothing_photo:
         await handle_clothing_photo(message, photo, state)
     else:
+        # Если фото загружено не в ожидаемом состоянии, переходим в authorized
+        await state.set_state(UserStates.authorized)
         await message.answer(
-            "❌ Неожиданное фото. Используй команду /start для начала работы.",
+            "❌ Неожиданное фото. Переходим в главное меню.",
             reply_markup=MainKeyboard.get_main_menu()
         )
 
