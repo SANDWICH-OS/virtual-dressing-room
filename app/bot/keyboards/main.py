@@ -35,6 +35,20 @@ class MainKeyboard:
             InlineKeyboardButton(text="❌ Нет", callback_data="no")
         )
         return builder.as_markup()
+    
+    @staticmethod
+    def get_ai_testing_keyboard() -> ReplyKeyboardMarkup:
+        """Клавиатура для тестирования ИИ сервисов"""
+        builder = ReplyKeyboardBuilder()
+        builder.add(
+            KeyboardButton(text="🤖 Тест VModel"),
+            KeyboardButton(text="👗 Тест Fashn"),
+            KeyboardButton(text="✂️ Тест Pixelcut"),
+            KeyboardButton(text="📸 Загрузить фото одежды"),
+            KeyboardButton(text="❌ Отмена")
+        )
+        builder.adjust(2, 2, 1)
+        return builder.as_markup(resize_keyboard=True)
 
 
 class ProfileKeyboard:

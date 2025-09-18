@@ -10,7 +10,9 @@ class UserStates(StatesGroup):
     
     # Try-on процесс
     waiting_for_clothing = State()         # Ждем фото одежды
+    photos_uploaded = State()              # Все фото загружены, можно тестировать ИИ
     processing_tryon = State()             # Обрабатываем генерацию
+    waiting_ai_response = State()          # Ждем ответ от ИИ сервиса
     
     # Дополнительные состояния
     waiting_for_clothing_url = State()     # Ждем ссылку на одежду

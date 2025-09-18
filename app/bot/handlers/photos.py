@@ -91,11 +91,11 @@ async def handle_fullbody_photo(message: Message, photo: PhotoSize, state: FSMCo
         
         await message.answer("✅ Фото в полный рост сохранено!")
         
-        # Профиль создан, переходим к главному меню
-        await state.clear()
+        # Профиль создан, переходим к состоянию готовности к тестированию ИИ
+        await state.set_state(UserStates.photos_uploaded)
         await message.answer(
-            "🎉 <b>Профиль создан!</b>\n\nТеперь ты можешь создавать try-on изображения!",
-            reply_markup=MainKeyboard.get_main_menu()
+            "🎉 <b>Профиль создан!</b>\n\nТеперь ты можешь тестировать ИИ сервисы для генерации try-on изображений!",
+            reply_markup=MainKeyboard.get_ai_testing_keyboard()
         )
         
         logger.info(f"User {user.id} uploaded fullbody photo successfully")
@@ -127,22 +127,12 @@ async def handle_clothing_photo(message: Message, photo: PhotoSize, state: FSMCo
         
         await message.answer("✅ Фото одежды сохранено!")
         
-        # Переходим к генерации
-        await state.set_state(UserStates.processing_tryon)
+        # Переходим к состоянию готовности к тестированию ИИ
+        await state.set_state(UserStates.photos_uploaded)
         await message.answer(
-            "⚡ <b>Генерирую try-on изображение...</b>\nЭто может занять 30-60 секунд",
-            reply_markup=MainKeyboard.get_cancel_keyboard()
+            "🎉 <b>Все фото загружены!</b>\n\nТеперь ты можешь тестировать разные ИИ сервисы для генерации try-on изображений!",
+            reply_markup=MainKeyboard.get_ai_testing_keyboard()
         )
-        
-        # Здесь будет вызов AI сервиса для генерации
-        # Пока просто имитируем процесс
-        await asyncio.sleep(2)
-        await message.answer(
-            "🎉 <b>Try-on готов!</b>\n\n(Пока это заглушка - AI интеграция будет в следующей фазе)",
-            reply_markup=MainKeyboard.get_main_menu()
-        )
-        
-        await state.clear()
         
         logger.info(f"User {user.id} uploaded clothing photo successfully")
         

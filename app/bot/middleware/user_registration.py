@@ -1,6 +1,6 @@
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
-from typing import Callable, Dict, Any, Awaitable
+from typing import Callable, Dict, Any, Awaitable, Union
 from app.database.async_session import get_async_session
 from app.models.user import User
 from sqlalchemy import select
@@ -14,7 +14,7 @@ class UserRegistrationMiddleware(BaseMiddleware):
     async def __call__(
         self,
         handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
-        event: Message | CallbackQuery,
+        event: Union[Message, CallbackQuery],
         data: Dict[str, Any]
     ) -> Any:
         """Обработка события с проверкой регистрации пользователя"""
