@@ -18,6 +18,10 @@ class ProductionSettings(BaseSettings):
     # Redis configuration - Railway Redis
     redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379")
     
+    # Bot token validation
+    if not bot_token:
+        raise ValueError("BOT_TOKEN environment variable is required for production")
+    
     # AI/ML APIs (placeholders for now)
     openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
     replicate_api_token: Optional[str] = os.getenv("REPLICATE_API_TOKEN")
@@ -40,6 +44,7 @@ class ProductionSettings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"  # Игнорируем дополнительные поля
 
 # Create production settings instance
 settings = ProductionSettings()

@@ -1,6 +1,7 @@
 import redis.asyncio as redis
 from typing import Optional, Any
 import json
+import os
 from app.config import settings
 
 
@@ -10,7 +11,18 @@ class RedisService:
     
     async def connect(self):
         """Подключение к Redis"""
-        self.redis = redis.from_url(settings.redis_url, decode_responses=True)
+        # Определяем, какая конфигурация использовать
+        if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"):
+            # В Railway используем production конфигурацию
+            from app import config_prod
+            current_settings = config_prod.settings
+        else:
+            # Локально используем обычную конфигурацию
+            current_settings = settings
+            
+        # Используем переменную окружения REDIS_URL для Railway
+        redis_url = os.getenv("REDIS_URL", current_settings.redis_url)
+        self.redis = redis.from_url(redis_url, decode_responses=True)
     
     async def disconnect(self):
         """Отключение от Redis"""

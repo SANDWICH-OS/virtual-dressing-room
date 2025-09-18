@@ -17,6 +17,11 @@ sys.path.insert(0, str(project_root))
 from dotenv import load_dotenv
 load_dotenv()
 
+# Используем production конфигурацию для Railway
+import sys
+sys.path.insert(0, str(project_root))
+from app import config_prod
+
 # Настраиваем логирование для production
 logger.remove()
 logger.add(
@@ -30,14 +35,10 @@ async def main():
     try:
         logger.info("🚀 Starting Virtual Try-On Bot (Railway Production)...")
         
-        # Импортируем и создаем бота
-        from app.bot.bot import create_bot, start_bot
+        # Импортируем функцию запуска бота
+        from app.bot.bot import start_bot
         
-        # Создаем бота
-        bot, dp = await create_bot()
-        logger.info("✅ Bot created successfully!")
-        
-        # Запускаем бота
+        # Запускаем бота (создание происходит внутри start_bot)
         await start_bot()
         
     except Exception as e:
