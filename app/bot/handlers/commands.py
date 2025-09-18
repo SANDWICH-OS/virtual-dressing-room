@@ -108,19 +108,23 @@ async def profile_command(message: Message, state: FSMContext):
             db_user = result.scalar_one_or_none()
             
             # Получаем количество загруженных фото
-            user_photo_count = await session.scalar(
-                select(func.count(UserPhoto.id)).where(
-                    UserPhoto.user_id == user.id,
-                    UserPhoto.photo_type == PhotoType.USER_PHOTO
-                )
-            ) or 0
-            
-            clothing_count = await session.scalar(
-                select(func.count(UserPhoto.id)).where(
-                    UserPhoto.user_id == user.id,
-                    UserPhoto.photo_type == PhotoType.CLOTHING
-                )
-            ) or 0
+            if db_user:
+                user_photo_count = await session.scalar(
+                    select(func.count(UserPhoto.id)).where(
+                        UserPhoto.user_id == db_user.id,
+                        UserPhoto.photo_type == PhotoType.USER_PHOTO
+                    )
+                ) or 0
+                
+                clothing_count = await session.scalar(
+                    select(func.count(UserPhoto.id)).where(
+                        UserPhoto.user_id == db_user.id,
+                        UserPhoto.photo_type == PhotoType.CLOTHING
+                    )
+                ) or 0
+            else:
+                user_photo_count = 0
+                clothing_count = 0
             
             # Формируем информацию о профиле
             if db_user:
@@ -197,10 +201,23 @@ async def test_vmodel_command(message: Message, state: FSMContext):
         from sqlalchemy import select, and_
         
         async with get_async_session() as session:
+            # Сначала получаем пользователя из БД
+            user_result = await session.execute(
+                select(User).where(User.telegram_id == user.id)
+            )
+            db_user = user_result.scalar_one_or_none()
+            
+            if not db_user:
+                await message.answer(
+                    "❌ Пользователь не найден в базе данных. Используй /start для регистрации.",
+                    reply_markup=MainKeyboard.get_main_menu()
+                )
+                return
+            
             # Проверяем фото пользователя
             user_photo_result = await session.execute(
                 select(UserPhoto).where(
-                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.USER_PHOTO)
+                    and_(UserPhoto.user_id == db_user.id, UserPhoto.photo_type == PhotoType.USER_PHOTO)
                 )
             )
             user_photo = user_photo_result.scalar_one_or_none()
@@ -208,7 +225,7 @@ async def test_vmodel_command(message: Message, state: FSMContext):
             # Проверяем фото одежды
             clothing_photo_result = await session.execute(
                 select(UserPhoto).where(
-                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.CLOTHING)
+                    and_(UserPhoto.user_id == db_user.id, UserPhoto.photo_type == PhotoType.CLOTHING)
                 )
             )
             clothing_photo = clothing_photo_result.scalar_one_or_none()
@@ -291,10 +308,23 @@ async def test_fashn_command(message: Message, state: FSMContext):
         from sqlalchemy import select, and_
         
         async with get_async_session() as session:
+            # Сначала получаем пользователя из БД
+            user_result = await session.execute(
+                select(User).where(User.telegram_id == user.id)
+            )
+            db_user = user_result.scalar_one_or_none()
+            
+            if not db_user:
+                await message.answer(
+                    "❌ Пользователь не найден в базе данных. Используй /start для регистрации.",
+                    reply_markup=MainKeyboard.get_main_menu()
+                )
+                return
+            
             # Проверяем фото пользователя
             user_photo_result = await session.execute(
                 select(UserPhoto).where(
-                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.USER_PHOTO)
+                    and_(UserPhoto.user_id == db_user.id, UserPhoto.photo_type == PhotoType.USER_PHOTO)
                 )
             )
             user_photo = user_photo_result.scalar_one_or_none()
@@ -302,7 +332,7 @@ async def test_fashn_command(message: Message, state: FSMContext):
             # Проверяем фото одежды
             clothing_photo_result = await session.execute(
                 select(UserPhoto).where(
-                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.CLOTHING)
+                    and_(UserPhoto.user_id == db_user.id, UserPhoto.photo_type == PhotoType.CLOTHING)
                 )
             )
             clothing_photo = clothing_photo_result.scalar_one_or_none()
@@ -385,10 +415,23 @@ async def test_pixelcut_command(message: Message, state: FSMContext):
         from sqlalchemy import select, and_
         
         async with get_async_session() as session:
+            # Сначала получаем пользователя из БД
+            user_result = await session.execute(
+                select(User).where(User.telegram_id == user.id)
+            )
+            db_user = user_result.scalar_one_or_none()
+            
+            if not db_user:
+                await message.answer(
+                    "❌ Пользователь не найден в базе данных. Используй /start для регистрации.",
+                    reply_markup=MainKeyboard.get_main_menu()
+                )
+                return
+            
             # Проверяем фото пользователя
             user_photo_result = await session.execute(
                 select(UserPhoto).where(
-                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.USER_PHOTO)
+                    and_(UserPhoto.user_id == db_user.id, UserPhoto.photo_type == PhotoType.USER_PHOTO)
                 )
             )
             user_photo = user_photo_result.scalar_one_or_none()
@@ -396,7 +439,7 @@ async def test_pixelcut_command(message: Message, state: FSMContext):
             # Проверяем фото одежды
             clothing_photo_result = await session.execute(
                 select(UserPhoto).where(
-                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.CLOTHING)
+                    and_(UserPhoto.user_id == db_user.id, UserPhoto.photo_type == PhotoType.CLOTHING)
                 )
             )
             clothing_photo = clothing_photo_result.scalar_one_or_none()
@@ -475,11 +518,21 @@ async def clear_command(message: Message, state: FSMContext):
     try:
         # Удаляем фото из БД
         async with get_async_session() as session:
-            # Удаляем все фото пользователя
-            await session.execute(
-                delete(UserPhoto).where(UserPhoto.user_id == user.id)
+            # Сначала получаем пользователя из БД
+            result = await session.execute(
+                select(User).where(User.telegram_id == user.id)
             )
-            await session.commit()
+            db_user = result.scalar_one_or_none()
+            
+            if db_user:
+                # Удаляем все фото пользователя по внутреннему ID
+                await session.execute(
+                    delete(UserPhoto).where(UserPhoto.user_id == db_user.id)
+                )
+                await session.commit()
+                logger.info(f"User {user.id} (db_id: {db_user.id}) cleared photos from database")
+            else:
+                logger.info(f"User {user.id} not found in database, nothing to clear")
         
         await state.clear()
         await message.answer(
@@ -487,7 +540,6 @@ async def clear_command(message: Message, state: FSMContext):
             reply_markup=MainKeyboard.get_main_menu()
         )
         await state.set_state(UserStates.authorized)
-        logger.info(f"User {user.id} cleared data and photos from database")
         
     except Exception as e:
         logger.error(f"Error clearing data for user {user.id}: {e}")
