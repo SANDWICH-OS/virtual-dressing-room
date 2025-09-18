@@ -517,6 +517,11 @@ async def test_pixelcut_command(message: Message, state: FSMContext):
 
 async def clear_command(message: Message, state: FSMContext):
     """Обработчик команды /clear"""
+    from app.database.async_session import get_async_session
+    from app.models.user import User
+    from app.models.photo import UserPhoto
+    from sqlalchemy import select, delete
+    
     user = message.from_user
     
     try:
