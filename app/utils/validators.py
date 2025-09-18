@@ -9,7 +9,7 @@ class ImageValidator:
     """Валидатор для изображений"""
     
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-    ALLOWED_FORMATS = {'JPEG', 'PNG', 'JPG'}
+    ALLOWED_FORMATS = {'JPEG', 'PNG', 'JPG', 'WEBP'}
     MIN_DIMENSIONS = (100, 100)
     MAX_DIMENSIONS = (4000, 4000)
     

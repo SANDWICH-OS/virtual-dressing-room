@@ -196,10 +196,53 @@ async def handle_clothing_upload_request(message: Message, state: FSMContext):
     logger.info(f"User {message.from_user.id} requested clothing upload")
 
 
+async def handle_general_text_messages(message: Message, state: FSMContext):
+    """Обработчик общих текстовых сообщений"""
+    from .commands import profile_command, help_command
+    
+    user = message.from_user
+    text = message.text
+    
+    # Обработка кнопок главного меню
+    if text == "👤 Мой профиль":
+        await profile_command(message, state)
+    elif text == "🎨 Создать try-on":
+        await message.answer(
+            "🎨 <b>Создание try-on</b>\n\nСначала загрузи свои фото для создания профиля, а затем фото одежды!",
+            reply_markup=MainKeyboard.get_main_menu()
+        )
+    elif text == "📸 Мои фото":
+        await message.answer(
+            "📸 <b>Мои фото</b>\n\nЗдесь будут твои загруженные фото.\nПока что эта функция в разработке.",
+            reply_markup=MainKeyboard.get_main_menu()
+        )
+    elif text == "💳 Подписка":
+        await message.answer(
+            "💳 <b>Подписка</b>\n\nЗдесь будет информация о подписках.\nПока что эта функция в разработке.",
+            reply_markup=MainKeyboard.get_main_menu()
+        )
+    elif text == "❓ Помощь":
+        await help_command(message, state)
+    else:
+        # Неизвестное сообщение
+        await message.answer(
+            "❓ <b>Не понимаю эту команду</b>\n\nИспользуй кнопки меню или команды:\n/start - Начать работу\n/help - Помощь\n/clear - Очистить данные",
+            reply_markup=MainKeyboard.get_main_menu()
+        )
+    
+    logger.info(f"User {user.id} sent text message: {text}")
+
+
 def register_ai_testing_handlers(dp: Dispatcher):
     """Регистрация обработчиков тестирования ИИ"""
     # Обработчик кнопок тестирования ИИ
     dp.message.register(
         handle_ai_testing_buttons,
         lambda m: m.text in ["🤖 Тест VModel", "👗 Тест Fashn", "✂️ Тест Pixelcut", "📸 Загрузить фото одежды"]
+    )
+    
+    # Обработчик всех остальных текстовых сообщений
+    dp.message.register(
+        handle_general_text_messages,
+        lambda m: m.text is not None and m.text not in ["❌ Отмена"]
     )

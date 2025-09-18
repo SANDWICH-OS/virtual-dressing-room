@@ -283,6 +283,16 @@ async def test_pixelcut_command(message: Message, state: FSMContext):
     logger.info(f"User {user.id} tested Pixelcut service")
 
 
+async def clear_command(message: Message, state: FSMContext):
+    """Обработчик команды /clear"""
+    await state.clear()
+    await message.answer(
+        "🧹 <b>Данные очищены!</b>\n\nВсе загруженные фото и состояния сброшены.\nИспользуй /start для начала работы.",
+        reply_markup=MainKeyboard.get_main_menu()
+    )
+    logger.info(f"User {message.from_user.id} cleared data")
+
+
 async def cancel_handler(message: Message, state: FSMContext):
     """Обработчик отмены"""
     await state.clear()
@@ -298,6 +308,7 @@ def register_command_handlers(dp: Dispatcher):
     dp.message.register(start_command, Command("start"))
     dp.message.register(help_command, Command("help"))
     dp.message.register(profile_command, Command("profile"))
+    dp.message.register(clear_command, Command("clear"))
     dp.message.register(test_vmodel_command, Command("test_vmodel"))
     dp.message.register(test_fashn_command, Command("test_fashn"))
     dp.message.register(test_pixelcut_command, Command("test_pixelcut"))
