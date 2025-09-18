@@ -17,9 +17,10 @@ class MainKeyboard:
             KeyboardButton(text="👗 Тест Fashn"),
             KeyboardButton(text="✂️ Тест Pixelcut"),
             KeyboardButton(text="💳 Подписка"),
+            KeyboardButton(text="🧹 Очистить данные"),
             KeyboardButton(text="❓ Помощь")
         )
-        builder.adjust(2, 2, 2, 1, 1)
+        builder.adjust(2, 2, 2, 1, 1, 1)
         return builder.as_markup(resize_keyboard=True)
     
     @staticmethod

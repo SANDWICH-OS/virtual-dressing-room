@@ -108,17 +108,10 @@ async def profile_command(message: Message, state: FSMContext):
             db_user = result.scalar_one_or_none()
             
             # Получаем количество загруженных фото
-            selfie_count = await session.scalar(
+            user_photo_count = await session.scalar(
                 select(func.count(UserPhoto.id)).where(
                     UserPhoto.user_id == user.id,
-                    UserPhoto.photo_type == PhotoType.SELFIE
-                )
-            ) or 0
-            
-            fullbody_count = await session.scalar(
-                select(func.count(UserPhoto.id)).where(
-                    UserPhoto.user_id == user.id,
-                    UserPhoto.photo_type == PhotoType.FULL_BODY
+                    UserPhoto.photo_type == PhotoType.USER_PHOTO
                 )
             ) or 0
             
@@ -150,17 +143,18 @@ async def profile_command(message: Message, state: FSMContext):
 📅 <b>Дата регистрации:</b> {created_at}
 
 📸 <b>Загруженные фото:</b>
-• Селфи: {selfie_count}
-• В полный рост: {fullbody_count}
-• Одежда: {clothing_count}
+• Пользователь: {'✅ Да' if user_photo_count > 0 else '❌ Нет'}
+• Одежда: {'✅ Да' if clothing_count > 0 else '❌ Нет'}
 
-{'✅ Профиль готов к использованию!' if selfie_count > 0 and fullbody_count > 0 else '⚠️ Загрузи фото для создания профиля'}
+{'✅ Профиль готов к использованию!' if user_photo_count > 0 and clothing_count > 0 else '⚠️ Загрузи фото для создания профиля'}
             """
             
             await message.answer(
                 profile_text,
                 reply_markup=MainKeyboard.get_main_menu()
             )
+            # Остаемся в состоянии authorized
+            await state.set_state(UserStates.authorized)
             
     except Exception as e:
         logger.error(f"Error getting profile info for user {user.id}: {e}")
@@ -176,9 +170,8 @@ async def profile_command(message: Message, state: FSMContext):
 📅 <b>Дата регистрации:</b> Неизвестно
 
 📸 <b>Загруженные фото:</b>
-• Селфи: 0
-• В полный рост: 0
-• Одежда: 0
+• Пользователь: ❌ Нет
+• Одежда: ❌ Нет
 
 ⚠️ Загрузи фото для создания профиля
         """
@@ -187,6 +180,8 @@ async def profile_command(message: Message, state: FSMContext):
             profile_text,
             reply_markup=MainKeyboard.get_main_menu()
         )
+        # Остаемся в состоянии authorized
+        await state.set_state(UserStates.authorized)
     
     logger.info(f"User {message.from_user.id} viewed profile")
 
@@ -417,7 +412,7 @@ async def upload_user_photo_command(message: Message, state: FSMContext):
     await state.set_state(UserStates.waiting_user_photo)
     await message.answer(
         "📷 <b>Загрузка фото пользователя</b>\n\nБот готов принять твое фото. Загрузи селфи для создания профиля.\n\n💡 <b>Советы:</b>\n• Делай фото анфас с хорошим освещением\n• Лицо должно быть хорошо видно\n• Избегай теней и бликов",
-        reply_markup=MainKeyboard.get_cancel_keyboard()
+        reply_markup=MainKeyboard.get_back_keyboard()
     )
     logger.info(f"User {message.from_user.id} started user photo upload")
 
@@ -427,7 +422,7 @@ async def upload_clothing_photo_command(message: Message, state: FSMContext):
     await state.set_state(UserStates.waiting_clothing_photo)
     await message.answer(
         "👗 <b>Загрузка фото одежды</b>\n\nБот готов принять фото одежды. Загрузи фото предмета одежды.\n\n💡 <b>Советы:</b>\n• Фотографируй на белом фоне\n• Одежда должна быть хорошо видна\n• Избегай теней и складок",
-        reply_markup=MainKeyboard.get_cancel_keyboard()
+        reply_markup=MainKeyboard.get_back_keyboard()
     )
     logger.info(f"User {message.from_user.id} started clothing photo upload")
 

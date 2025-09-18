@@ -201,7 +201,8 @@ async def handle_general_text_messages(message: Message, state: FSMContext):
     from .commands import (
         profile_command, help_command, upload_user_photo_command, 
         upload_clothing_photo_command, subscription_command,
-        test_vmodel_command, test_fashn_command, test_pixelcut_command
+        test_vmodel_command, test_fashn_command, test_pixelcut_command,
+        clear_command
     )
     
     user = message.from_user
@@ -232,6 +233,8 @@ async def handle_general_text_messages(message: Message, state: FSMContext):
             await test_pixelcut_command(message, state)
         elif text == "💳 Подписка":
             await subscription_command(message, state)
+        elif text == "🧹 Очистить данные":
+            await clear_command(message, state)
         elif text == "❓ Помощь":
             await help_command(message, state)
         else:
@@ -258,6 +261,8 @@ async def handle_general_text_messages(message: Message, state: FSMContext):
             await test_pixelcut_command(message, state)
         elif text == "💳 Подписка":
             await subscription_command(message, state)
+        elif text == "🧹 Очистить данные":
+            await clear_command(message, state)
         elif text == "❓ Помощь":
             await help_command(message, state)
         else:
@@ -282,6 +287,8 @@ async def handle_general_text_messages(message: Message, state: FSMContext):
             await test_pixelcut_command(message, state)
         elif text == "💳 Подписка":
             await subscription_command(message, state)
+        elif text == "🧹 Очистить данные":
+            await clear_command(message, state)
         elif text == "❓ Помощь":
             await help_command(message, state)
         else:
