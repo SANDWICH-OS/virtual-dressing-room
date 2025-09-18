@@ -28,19 +28,23 @@ async def create_bot():
     # Получаем Redis URL из переменных окружения для Railway
     redis_url = os.getenv("REDIS_URL", current_settings.redis_url)
     
-    # Подключаемся к Redis
-    try:
-        await redis_service.connect()
-        logger.info(f"✅ Connected to Redis: {redis_url}")
-    except Exception as e:
-        logger.error(f"❌ Failed to connect to Redis: {e}")
-        # В случае ошибки Redis, используем MemoryStorage как fallback
+    # Проверяем, есть ли Redis URL и не localhost ли это
+    if not redis_url or "localhost" in redis_url or "127.0.0.1" in redis_url:
+        logger.warning("⚠️ Redis URL not configured or points to localhost, using MemoryStorage")
         from aiogram.fsm.storage.memory import MemoryStorage
         storage = MemoryStorage()
-        logger.warning("⚠️ Using MemoryStorage as fallback")
     else:
-        # Создаем диспетчер с Redis storage
-        storage = RedisStorage.from_url(redis_url)
+        # Пытаемся подключиться к Redis
+        try:
+            await redis_service.connect()
+            logger.info(f"✅ Connected to Redis: {redis_url}")
+            storage = RedisStorage.from_url(redis_url)
+        except Exception as e:
+            logger.error(f"❌ Failed to connect to Redis: {e}")
+            # В случае ошибки Redis, используем MemoryStorage как fallback
+            from aiogram.fsm.storage.memory import MemoryStorage
+            storage = MemoryStorage()
+            logger.warning("⚠️ Using MemoryStorage as fallback")
     
     # Создаем бота
     bot = Bot(

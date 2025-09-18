@@ -35,6 +35,12 @@ async def main():
     try:
         logger.info("🚀 Starting Virtual Try-On Bot (Railway Production)...")
         
+        # Логируем переменные окружения для отладки
+        logger.info(f"BOT_TOKEN: {'✅ Set' if os.getenv('BOT_TOKEN') else '❌ Missing'}")
+        logger.info(f"REDIS_URL: {os.getenv('REDIS_URL', 'Not set')}")
+        logger.info(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'Not set')}")
+        logger.info(f"RAILWAY_ENVIRONMENT: {os.getenv('RAILWAY_ENVIRONMENT', 'Not set')}")
+        
         # Импортируем функцию запуска бота
         from app.bot.bot import start_bot
         

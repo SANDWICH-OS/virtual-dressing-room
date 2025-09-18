@@ -22,6 +22,11 @@ class RedisService:
             
         # Используем переменную окружения REDIS_URL для Railway
         redis_url = os.getenv("REDIS_URL", current_settings.redis_url)
+        
+        # Проверяем, что Redis URL не localhost
+        if not redis_url or "localhost" in redis_url or "127.0.0.1" in redis_url:
+            raise ConnectionError("Redis URL not configured or points to localhost")
+            
         self.redis = redis.from_url(redis_url, decode_responses=True)
     
     async def disconnect(self):
