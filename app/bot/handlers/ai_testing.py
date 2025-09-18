@@ -306,5 +306,5 @@ def register_ai_testing_handlers(dp: Dispatcher):
     # Обработчик всех текстовых сообщений (кроме команд и отмены)
     dp.message.register(
         handle_general_text_messages,
-        lambda m: m.text is not None and m.text not in ["❌ Отмена", "🔙 Назад"]
+        lambda m: m.text is not None and m.text not in ["🔙 Назад"]
     )

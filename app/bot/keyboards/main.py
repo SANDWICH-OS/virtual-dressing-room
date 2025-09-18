@@ -25,9 +25,8 @@ class MainKeyboard:
     
     @staticmethod
     def get_cancel_keyboard() -> ReplyKeyboardMarkup:
-        """Клавиатура с кнопкой отмены"""
+        """Клавиатура с кнопкой отмены (удалена)"""
         builder = ReplyKeyboardBuilder()
-        builder.add(KeyboardButton(text="❌ Отмена"))
         return builder.as_markup(resize_keyboard=True)
     
     @staticmethod
@@ -49,16 +48,8 @@ class MainKeyboard:
     
     @staticmethod
     def get_ai_testing_keyboard() -> ReplyKeyboardMarkup:
-        """Клавиатура для тестирования ИИ сервисов"""
+        """Клавиатура для тестирования ИИ сервисов (удалена)"""
         builder = ReplyKeyboardBuilder()
-        builder.add(
-            KeyboardButton(text="🤖 Тест VModel"),
-            KeyboardButton(text="👗 Тест Fashn"),
-            KeyboardButton(text="✂️ Тест Pixelcut"),
-            KeyboardButton(text="📸 Загрузить фото одежды"),
-            KeyboardButton(text="❌ Отмена")
-        )
-        builder.adjust(2, 2, 1)
         return builder.as_markup(resize_keyboard=True)
 
 
@@ -72,8 +63,7 @@ class ProfileKeyboard:
         builder.add(
             KeyboardButton(text="📷 Загрузить селфи"),
             KeyboardButton(text="📸 Загрузить фото в полный рост"),
-            KeyboardButton(text="👀 Посмотреть мои фото"),
-            KeyboardButton(text="❌ Отмена")
+            KeyboardButton(text="👀 Посмотреть мои фото")
         )
         builder.adjust(2, 1, 1)
         return builder.as_markup(resize_keyboard=True)
@@ -101,8 +91,7 @@ class TryOnKeyboard:
         builder = ReplyKeyboardBuilder()
         builder.add(
             KeyboardButton(text="📷 Загрузить фото одежды"),
-            KeyboardButton(text="🔗 Отправить ссылку на одежду"),
-            KeyboardButton(text="❌ Отмена")
+            KeyboardButton(text="🔗 Отправить ссылку на одежду")
         )
         builder.adjust(1, 1, 1)
         return builder.as_markup(resize_keyboard=True)
@@ -114,8 +103,7 @@ class TryOnKeyboard:
         builder.add(
             InlineKeyboardButton(text="🔄 Сгенерировать еще раз", callback_data="regenerate"),
             InlineKeyboardButton(text="💾 Сохранить результат", callback_data="save_result"),
-            InlineKeyboardButton(text="📤 Поделиться", callback_data="share_result"),
-            InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_tryon")
+            InlineKeyboardButton(text="📤 Поделиться", callback_data="share_result")
         )
         builder.adjust(2, 1, 1)
         return builder.as_markup()

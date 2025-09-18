@@ -91,7 +91,7 @@ async def profile_command(message: Message, state: FSMContext):
     from app.database.async_session import get_async_session
     from app.models.user import User
     from app.models.photo import UserPhoto, PhotoType
-    from sqlalchemy import select, func
+    from sqlalchemy import select, func, delete
     
     # Очищаем состояние
     await state.clear()
@@ -271,11 +271,11 @@ async def test_vmodel_command(message: Message, state: FSMContext):
         processing_time=processing_time
     )
     
+    await state.set_state(UserStates.authorized)
     await message.answer(
         "🎉 <b>VModel результат готов!</b>\n\n(Это заглушка - реальная интеграция будет в Фазе 4.2)\n\nКачество: ⭐⭐⭐⭐\nВремя обработки: 2.3 сек",
-        reply_markup=MainKeyboard.get_ai_testing_keyboard()
+        reply_markup=MainKeyboard.get_main_menu()
     )
-    await state.set_state(UserStates.photos_uploaded)
     
     logger.info(f"User {user.id} tested VModel service")
 
@@ -283,11 +283,47 @@ async def test_vmodel_command(message: Message, state: FSMContext):
 async def test_fashn_command(message: Message, state: FSMContext):
     """Обработчик команды /test_fashn"""
     user = message.from_user
-    current_state = await state.get_state()
     
-    if current_state != UserStates.photos_uploaded:
+    # Проверяем наличие фото пользователя и одежды
+    try:
+        from app.database.async_session import get_async_session
+        from app.models.photo import UserPhoto, PhotoType
+        from sqlalchemy import select, and_
+        
+        async with get_async_session() as session:
+            # Проверяем фото пользователя
+            user_photo_result = await session.execute(
+                select(UserPhoto).where(
+                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.USER_PHOTO)
+                )
+            )
+            user_photo = user_photo_result.scalar_one_or_none()
+            
+            # Проверяем фото одежды
+            clothing_photo_result = await session.execute(
+                select(UserPhoto).where(
+                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.CLOTHING)
+                )
+            )
+            clothing_photo = clothing_photo_result.scalar_one_or_none()
+            
+            if not user_photo or not clothing_photo:
+                missing_photos = []
+                if not user_photo:
+                    missing_photos.append("фото пользователя")
+                if not clothing_photo:
+                    missing_photos.append("фото одежды")
+                
+                await message.answer(
+                    f"❌ Сначала загрузи {', '.join(missing_photos)}!\n\nИспользуй команды:\n/upload_user_photo - загрузить фото пользователя\n/upload_clothing_photo - загрузить фото одежды",
+                    reply_markup=MainKeyboard.get_main_menu()
+                )
+                return
+                
+    except Exception as e:
+        logger.error(f"Error checking photos for user {user.id}: {e}")
         await message.answer(
-            "❌ Сначала загрузи свои фото для создания профиля!",
+            "❌ Ошибка при проверке фото. Попробуй еще раз.",
             reply_markup=MainKeyboard.get_main_menu()
         )
         return
@@ -305,7 +341,7 @@ async def test_fashn_command(message: Message, state: FSMContext):
     await state.set_state(UserStates.waiting_ai_response)
     await message.answer(
         "👗 <b>Тестируем Fashn...</b>\n\nОтправляю твои фото в Fashn API для генерации try-on изображения.\nЭто может занять 30-60 секунд.",
-        reply_markup=MainKeyboard.get_cancel_keyboard()
+        reply_markup=MainKeyboard.get_main_menu()
     )
     
     # Заглушка для Fashn
@@ -329,11 +365,11 @@ async def test_fashn_command(message: Message, state: FSMContext):
         processing_time=processing_time
     )
     
+    await state.set_state(UserStates.authorized)
     await message.answer(
         "🎉 <b>Fashn результат готов!</b>\n\n(Это заглушка - реальная интеграция будет в Фазе 4.3)\n\nКачество: ⭐⭐⭐⭐⭐\nВремя обработки: 1.8 сек",
-        reply_markup=MainKeyboard.get_ai_testing_keyboard()
+        reply_markup=MainKeyboard.get_main_menu()
     )
-    await state.set_state(UserStates.photos_uploaded)
     
     logger.info(f"User {user.id} tested Fashn service")
 
@@ -341,11 +377,47 @@ async def test_fashn_command(message: Message, state: FSMContext):
 async def test_pixelcut_command(message: Message, state: FSMContext):
     """Обработчик команды /test_pixelcut"""
     user = message.from_user
-    current_state = await state.get_state()
     
-    if current_state != UserStates.photos_uploaded:
+    # Проверяем наличие фото пользователя и одежды
+    try:
+        from app.database.async_session import get_async_session
+        from app.models.photo import UserPhoto, PhotoType
+        from sqlalchemy import select, and_
+        
+        async with get_async_session() as session:
+            # Проверяем фото пользователя
+            user_photo_result = await session.execute(
+                select(UserPhoto).where(
+                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.USER_PHOTO)
+                )
+            )
+            user_photo = user_photo_result.scalar_one_or_none()
+            
+            # Проверяем фото одежды
+            clothing_photo_result = await session.execute(
+                select(UserPhoto).where(
+                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.CLOTHING)
+                )
+            )
+            clothing_photo = clothing_photo_result.scalar_one_or_none()
+            
+            if not user_photo or not clothing_photo:
+                missing_photos = []
+                if not user_photo:
+                    missing_photos.append("фото пользователя")
+                if not clothing_photo:
+                    missing_photos.append("фото одежды")
+                
+                await message.answer(
+                    f"❌ Сначала загрузи {', '.join(missing_photos)}!\n\nИспользуй команды:\n/upload_user_photo - загрузить фото пользователя\n/upload_clothing_photo - загрузить фото одежды",
+                    reply_markup=MainKeyboard.get_main_menu()
+                )
+                return
+                
+    except Exception as e:
+        logger.error(f"Error checking photos for user {user.id}: {e}")
         await message.answer(
-            "❌ Сначала загрузи свои фото для создания профиля!",
+            "❌ Ошибка при проверке фото. Попробуй еще раз.",
             reply_markup=MainKeyboard.get_main_menu()
         )
         return
@@ -363,7 +435,7 @@ async def test_pixelcut_command(message: Message, state: FSMContext):
     await state.set_state(UserStates.waiting_ai_response)
     await message.answer(
         "✂️ <b>Тестируем Pixelcut...</b>\n\nОтправляю твои фото в Pixelcut API для генерации try-on изображения.\nЭто может занять 30-60 секунд.",
-        reply_markup=MainKeyboard.get_cancel_keyboard()
+        reply_markup=MainKeyboard.get_main_menu()
     )
     
     # Заглушка для Pixelcut
@@ -387,24 +459,44 @@ async def test_pixelcut_command(message: Message, state: FSMContext):
         processing_time=processing_time
     )
     
+    await state.set_state(UserStates.authorized)
     await message.answer(
         "🎉 <b>Pixelcut результат готов!</b>\n\n(Это заглушка - реальная интеграция будет в Фазе 4.4)\n\nКачество: ⭐⭐⭐\nВремя обработки: 3.1 сек",
-        reply_markup=MainKeyboard.get_ai_testing_keyboard()
+        reply_markup=MainKeyboard.get_main_menu()
     )
-    await state.set_state(UserStates.photos_uploaded)
     
     logger.info(f"User {user.id} tested Pixelcut service")
 
 
 async def clear_command(message: Message, state: FSMContext):
     """Обработчик команды /clear"""
-    await state.clear()
-    await message.answer(
-        "🧹 <b>Данные очищены!</b>\n\nВсе загруженные фото и состояния сброшены.\nИспользуй /start для начала работы.",
-        reply_markup=MainKeyboard.get_main_menu()
-    )
-    await state.set_state(UserStates.authorized)
-    logger.info(f"User {message.from_user.id} cleared data")
+    user = message.from_user
+    
+    try:
+        # Удаляем фото из БД
+        async with get_async_session() as session:
+            # Удаляем все фото пользователя
+            await session.execute(
+                delete(UserPhoto).where(UserPhoto.user_id == user.id)
+            )
+            await session.commit()
+        
+        await state.clear()
+        await message.answer(
+            "🧹 <b>Данные очищены!</b>\n\nВсе загруженные фото и состояния сброшены.\nИспользуй /start для начала работы.",
+            reply_markup=MainKeyboard.get_main_menu()
+        )
+        await state.set_state(UserStates.authorized)
+        logger.info(f"User {user.id} cleared data and photos from database")
+        
+    except Exception as e:
+        logger.error(f"Error clearing data for user {user.id}: {e}")
+        await state.clear()
+        await message.answer(
+            "🧹 <b>Данные очищены!</b>\n\nВсе загруженные фото и состояния сброшены.\nИспользуй /start для начала работы.",
+            reply_markup=MainKeyboard.get_main_menu()
+        )
+        await state.set_state(UserStates.authorized)
 
 
 async def upload_user_photo_command(message: Message, state: FSMContext):
@@ -447,14 +539,6 @@ async def back_command(message: Message, state: FSMContext):
     logger.info(f"User {message.from_user.id} returned to main menu")
 
 
-async def cancel_handler(message: Message, state: FSMContext):
-    """Обработчик отмены"""
-    await state.clear()
-    await message.answer(
-        "❌ Операция отменена",
-        reply_markup=MainKeyboard.get_main_menu()
-    )
-    logger.info(f"User {message.from_user.id} cancelled operation")
 
 
 def register_command_handlers(dp: Dispatcher):
@@ -470,5 +554,4 @@ def register_command_handlers(dp: Dispatcher):
     dp.message.register(test_vmodel_command, Command("test_vmodel"))
     dp.message.register(test_fashn_command, Command("test_fashn"))
     dp.message.register(test_pixelcut_command, Command("test_pixelcut"))
-    dp.message.register(cancel_handler, lambda m: m.text == "❌ Отмена")
     dp.message.register(back_command, lambda m: m.text == "🔙 Назад")
