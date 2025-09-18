@@ -23,13 +23,19 @@ async def start_command(message: Message, state: FSMContext):
 
 Привет, {user.first_name}! Я помогу тебе примерить одежду виртуально с помощью ИИ.
 
-🎯 <b>Что я умею:</b>
-• Создавать твой виртуальный профиль
-• Генерировать фото в новой одежде
-• Сохранять результаты примерки
+🎯 <b>Доступные команды:</b>
+/help - Список команд
+/profile - Информация о профиле
+/clear - Очистить данные
+/upload_user_photo - Загрузить фото пользователя
+/upload_clothing_photo - Загрузить фото одежды
+/test_vmodel - Тест VModel API
+/test_fashn - Тест Fashn API
+/test_pixelcut - Тест Pixelcut API
+/subscription - Управление подпиской
+/back - Вернуться в главное меню
 
-🚀 <b>Начнем?</b>
-Сначала нужно создать твой профиль - загрузи свои фото!
+🚀 <b>Начнем работу!</b>
     """
     
     await message.answer(
@@ -37,13 +43,8 @@ async def start_command(message: Message, state: FSMContext):
         reply_markup=MainKeyboard.get_main_menu()
     )
     
-    # Переводим в состояние ожидания селфи
-    await state.set_state(UserStates.waiting_for_selfie)
-    
-    await message.answer(
-        "📷 <b>Шаг 1:</b> Загрузи свое селфи для создания профиля",
-        reply_markup=MainKeyboard.get_cancel_keyboard()
-    )
+    # Переводим в состояние авторизован
+    await state.set_state(UserStates.authorized)
     
     logger.info(f"User {user.id} started bot")
 
@@ -193,11 +194,47 @@ async def profile_command(message: Message, state: FSMContext):
 async def test_vmodel_command(message: Message, state: FSMContext):
     """Обработчик команды /test_vmodel"""
     user = message.from_user
-    current_state = await state.get_state()
     
-    if current_state != UserStates.photos_uploaded:
+    # Проверяем наличие фото пользователя и одежды
+    try:
+        from app.database.async_session import get_async_session
+        from app.models.photo import UserPhoto, PhotoType
+        from sqlalchemy import select, and_
+        
+        async with get_async_session() as session:
+            # Проверяем фото пользователя
+            user_photo_result = await session.execute(
+                select(UserPhoto).where(
+                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.USER_PHOTO)
+                )
+            )
+            user_photo = user_photo_result.scalar_one_or_none()
+            
+            # Проверяем фото одежды
+            clothing_photo_result = await session.execute(
+                select(UserPhoto).where(
+                    and_(UserPhoto.user_id == user.id, UserPhoto.photo_type == PhotoType.CLOTHING)
+                )
+            )
+            clothing_photo = clothing_photo_result.scalar_one_or_none()
+            
+            if not user_photo or not clothing_photo:
+                missing_photos = []
+                if not user_photo:
+                    missing_photos.append("фото пользователя")
+                if not clothing_photo:
+                    missing_photos.append("фото одежды")
+                
+                await message.answer(
+                    f"❌ Сначала загрузи {', '.join(missing_photos)}!\n\nИспользуй команды:\n/upload_user_photo - загрузить фото пользователя\n/upload_clothing_photo - загрузить фото одежды",
+                    reply_markup=MainKeyboard.get_main_menu()
+                )
+                return
+                
+    except Exception as e:
+        logger.error(f"Error checking photos for user {user.id}: {e}")
         await message.answer(
-            "❌ Сначала загрузи свои фото для создания профиля!",
+            "❌ Ошибка при проверке фото. Попробуй еще раз.",
             reply_markup=MainKeyboard.get_main_menu()
         )
         return
@@ -371,7 +408,48 @@ async def clear_command(message: Message, state: FSMContext):
         "🧹 <b>Данные очищены!</b>\n\nВсе загруженные фото и состояния сброшены.\nИспользуй /start для начала работы.",
         reply_markup=MainKeyboard.get_main_menu()
     )
+    await state.set_state(UserStates.authorized)
     logger.info(f"User {message.from_user.id} cleared data")
+
+
+async def upload_user_photo_command(message: Message, state: FSMContext):
+    """Обработчик команды /upload_user_photo"""
+    await state.set_state(UserStates.waiting_user_photo)
+    await message.answer(
+        "📷 <b>Загрузка фото пользователя</b>\n\nБот готов принять твое фото. Загрузи селфи для создания профиля.\n\n💡 <b>Советы:</b>\n• Делай фото анфас с хорошим освещением\n• Лицо должно быть хорошо видно\n• Избегай теней и бликов",
+        reply_markup=MainKeyboard.get_cancel_keyboard()
+    )
+    logger.info(f"User {message.from_user.id} started user photo upload")
+
+
+async def upload_clothing_photo_command(message: Message, state: FSMContext):
+    """Обработчик команды /upload_clothing_photo"""
+    await state.set_state(UserStates.waiting_clothing_photo)
+    await message.answer(
+        "👗 <b>Загрузка фото одежды</b>\n\nБот готов принять фото одежды. Загрузи фото предмета одежды.\n\n💡 <b>Советы:</b>\n• Фотографируй на белом фоне\n• Одежда должна быть хорошо видна\n• Избегай теней и складок",
+        reply_markup=MainKeyboard.get_cancel_keyboard()
+    )
+    logger.info(f"User {message.from_user.id} started clothing photo upload")
+
+
+async def subscription_command(message: Message, state: FSMContext):
+    """Обработчик команды /subscription"""
+    await state.set_state(UserStates.subscription_management)
+    await message.answer(
+        "💳 <b>Управление подпиской</b>\n\nЗдесь будет информация о подписках и лимитах.\nПока что эта функция в разработке.",
+        reply_markup=MainKeyboard.get_back_keyboard()
+    )
+    logger.info(f"User {message.from_user.id} opened subscription management")
+
+
+async def back_command(message: Message, state: FSMContext):
+    """Обработчик команды /back"""
+    await state.set_state(UserStates.authorized)
+    await message.answer(
+        "🏠 <b>Главное меню</b>\n\nВыбери команду или используй кнопки ниже:",
+        reply_markup=MainKeyboard.get_main_menu()
+    )
+    logger.info(f"User {message.from_user.id} returned to main menu")
 
 
 async def cancel_handler(message: Message, state: FSMContext):
@@ -390,7 +468,12 @@ def register_command_handlers(dp: Dispatcher):
     dp.message.register(help_command, Command("help"))
     dp.message.register(profile_command, Command("profile"))
     dp.message.register(clear_command, Command("clear"))
+    dp.message.register(upload_user_photo_command, Command("upload_user_photo"))
+    dp.message.register(upload_clothing_photo_command, Command("upload_clothing_photo"))
+    dp.message.register(subscription_command, Command("subscription"))
+    dp.message.register(back_command, Command("back"))
     dp.message.register(test_vmodel_command, Command("test_vmodel"))
     dp.message.register(test_fashn_command, Command("test_fashn"))
     dp.message.register(test_pixelcut_command, Command("test_pixelcut"))
     dp.message.register(cancel_handler, lambda m: m.text == "❌ Отмена")
+    dp.message.register(back_command, lambda m: m.text == "🔙 Назад")

@@ -20,11 +20,9 @@ async def handle_photo(message: Message, state: FSMContext):
     
     logger.info(f"User {user.id} uploaded photo, current state: {current_state}")
     
-    if current_state == UserStates.waiting_for_selfie:
-        await handle_selfie_photo(message, photo, state)
-    elif current_state == UserStates.waiting_for_full_body:
-        await handle_fullbody_photo(message, photo, state)
-    elif current_state == UserStates.waiting_for_clothing:
+    if current_state == UserStates.waiting_user_photo:
+        await handle_user_photo(message, photo, state)
+    elif current_state == UserStates.waiting_clothing_photo:
         await handle_clothing_photo(message, photo, state)
     else:
         await message.answer(
@@ -33,14 +31,14 @@ async def handle_photo(message: Message, state: FSMContext):
         )
 
 
-async def handle_selfie_photo(message: Message, photo: PhotoSize, state: FSMContext):
-    """Обработка селфи пользователя"""
+async def handle_user_photo(message: Message, photo: PhotoSize, state: FSMContext):
+    """Обработка фото пользователя"""
     user = message.from_user
     
     try:
         # Обрабатываем фото через сервис
         cloudinary_url, public_id, error = await file_service.process_telegram_photo(
-            message.bot, photo, user.id, PhotoType.SELFIE
+            message.bot, photo, user.id, PhotoType.USER_PHOTO
         )
         
         if error:
@@ -50,58 +48,22 @@ async def handle_selfie_photo(message: Message, photo: PhotoSize, state: FSMCont
         # Сохраняем в БД
         async with get_async_session() as session:
             await file_service.save_photo_to_database(
-                session, user.id, cloudinary_url, PhotoType.SELFIE, public_id
+                session, user.id, cloudinary_url, PhotoType.USER_PHOTO, public_id
             )
         
-        await message.answer("✅ Селфи сохранено!")
+        await message.answer("✅ Фото пользователя сохранено!")
         
-        # Переходим к следующему шагу
-        await state.set_state(UserStates.waiting_for_full_body)
+        # Переходим в состояние авторизован
+        await state.set_state(UserStates.authorized)
         await message.answer(
-            "📸 <b>Шаг 2:</b> Теперь загрузи фото в полный рост",
-            reply_markup=MainKeyboard.get_cancel_keyboard()
+            "🎉 <b>Фото загружено!</b>\n\nТеперь ты можешь загрузить фото одежды или тестировать ИИ сервисы!",
+            reply_markup=MainKeyboard.get_main_menu()
         )
         
-        logger.info(f"User {user.id} uploaded selfie successfully")
+        logger.info(f"User {user.id} uploaded user photo successfully")
         
     except Exception as e:
-        logger.error(f"Error handling selfie for user {user.id}: {e}")
-        await message.answer("❌ Произошла ошибка. Попробуй еще раз.")
-
-
-async def handle_fullbody_photo(message: Message, photo: PhotoSize, state: FSMContext):
-    """Обработка фото в полный рост"""
-    user = message.from_user
-    
-    try:
-        # Обрабатываем фото через сервис
-        cloudinary_url, public_id, error = await file_service.process_telegram_photo(
-            message.bot, photo, user.id, PhotoType.FULL_BODY
-        )
-        
-        if error:
-            await message.answer(f"❌ {error}\n\nПопробуй загрузить другое фото:")
-            return
-        
-        # Сохраняем в БД
-        async with get_async_session() as session:
-            await file_service.save_photo_to_database(
-                session, user.id, cloudinary_url, PhotoType.FULL_BODY, public_id
-            )
-        
-        await message.answer("✅ Фото в полный рост сохранено!")
-        
-        # Профиль создан, переходим к состоянию готовности к тестированию ИИ
-        await state.set_state(UserStates.photos_uploaded)
-        await message.answer(
-            "🎉 <b>Профиль создан!</b>\n\nТеперь ты можешь тестировать ИИ сервисы для генерации try-on изображений!",
-            reply_markup=MainKeyboard.get_ai_testing_keyboard()
-        )
-        
-        logger.info(f"User {user.id} uploaded fullbody photo successfully")
-        
-    except Exception as e:
-        logger.error(f"Error handling fullbody photo for user {user.id}: {e}")
+        logger.error(f"Error handling user photo for user {user.id}: {e}")
         await message.answer("❌ Произошла ошибка. Попробуй еще раз.")
 
 
@@ -127,11 +89,11 @@ async def handle_clothing_photo(message: Message, photo: PhotoSize, state: FSMCo
         
         await message.answer("✅ Фото одежды сохранено!")
         
-        # Переходим к состоянию готовности к тестированию ИИ
-        await state.set_state(UserStates.photos_uploaded)
+        # Переходим в состояние авторизован
+        await state.set_state(UserStates.authorized)
         await message.answer(
-            "🎉 <b>Все фото загружены!</b>\n\nТеперь ты можешь тестировать разные ИИ сервисы для генерации try-on изображений!",
-            reply_markup=MainKeyboard.get_ai_testing_keyboard()
+            "🎉 <b>Фото одежды загружено!</b>\n\nТеперь ты можешь тестировать ИИ сервисы для генерации try-on изображений!",
+            reply_markup=MainKeyboard.get_main_menu()
         )
         
         logger.info(f"User {user.id} uploaded clothing photo successfully")

@@ -27,6 +27,13 @@ class MainKeyboard:
         return builder.as_markup(resize_keyboard=True)
     
     @staticmethod
+    def get_back_keyboard() -> ReplyKeyboardMarkup:
+        """Клавиатура с кнопкой назад"""
+        builder = ReplyKeyboardBuilder()
+        builder.add(KeyboardButton(text="🔙 Назад"))
+        return builder.as_markup(resize_keyboard=True)
+    
+    @staticmethod
     def get_yes_no_keyboard() -> InlineKeyboardMarkup:
         """Клавиатура Да/Нет"""
         builder = InlineKeyboardBuilder()

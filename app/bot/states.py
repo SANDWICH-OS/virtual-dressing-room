@@ -2,22 +2,21 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 class UserStates(StatesGroup):
-    """Состояния пользователя для FSM"""
+    """Состояния пользователя для FSM согласно ТЗ"""
     
-    # Создание профиля
-    waiting_for_selfie = State()           # Ждем селфи пользователя
-    waiting_for_full_body = State()        # Ждем фото в полный рост
+    # Основные состояния
+    unauthorized = State()                 # 1. Неавторизован (до /start)
+    authorized = State()                   # 2. Авторизован (после /start)
     
-    # Try-on процесс
-    waiting_for_clothing = State()         # Ждем фото одежды
-    photos_uploaded = State()              # Все фото загружены, можно тестировать ИИ
-    processing_tryon = State()             # Обрабатываем генерацию
+    # Загрузка фото
+    waiting_user_photo = State()           # 3. Загрузка фото пользователя
+    waiting_clothing_photo = State()       # 4. Загрузка фото одежды
+    
+    # Управление подпиской
+    subscription_management = State()      # 5. Управление подпиской
+    
+    # Дополнительные состояния для обработки
     waiting_ai_response = State()          # Ждем ответ от ИИ сервиса
-    
-    # Дополнительные состояния
-    waiting_for_clothing_url = State()     # Ждем ссылку на одежду
-    viewing_results = State()              # Просматриваем результаты
-    settings = State()                     # Настройки профиля
 
 
 class AdminStates(StatesGroup):

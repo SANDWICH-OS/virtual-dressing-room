@@ -27,7 +27,7 @@ class FileService:
         """
         try:
             # Валидируем фото
-            if photo_type in [PhotoType.SELFIE, PhotoType.FULL_BODY]:
+            if photo_type == PhotoType.USER_PHOTO:
                 is_valid, error = await image_validator.validate_user_photo(photo_url)
             else:
                 is_valid, error = await image_validator.validate_clothing_photo(photo_url)

@@ -5,9 +5,8 @@ import enum
 
 
 class PhotoType(str, enum.Enum):
-    SELFIE = "selfie"
-    FULL_BODY = "full_body"
-    CLOTHING = "clothing"
+    USER_PHOTO = "user_photo"      # Фото пользователя (селфи)
+    CLOTHING = "clothing"          # Фото одежды
 
 
 class UserPhoto(Base):
