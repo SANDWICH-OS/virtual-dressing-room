@@ -48,9 +48,22 @@ async def handle_user_photo(message: Message, photo: PhotoSize, state: FSMContex
         
         # Сохраняем в БД
         async with get_async_session() as session:
-            await file_service.save_photo_to_database(
-                session, user.id, cloudinary_url, PhotoType.USER_PHOTO, public_id
+            # Получаем пользователя из БД
+            from app.models.user import User
+            from sqlalchemy import select
+            
+            result = await session.execute(
+                select(User).where(User.telegram_id == user.id)
             )
+            db_user = result.scalar_one_or_none()
+            
+            if db_user:
+                await file_service.save_photo_to_database(
+                    session, db_user.id, cloudinary_url, PhotoType.USER_PHOTO, public_id
+                )
+            else:
+                await message.answer("❌ Пользователь не найден в базе данных.")
+                return
         
         await message.answer("✅ Фото пользователя сохранено!")
         
@@ -84,9 +97,22 @@ async def handle_clothing_photo(message: Message, photo: PhotoSize, state: FSMCo
         
         # Сохраняем в БД
         async with get_async_session() as session:
-            await file_service.save_photo_to_database(
-                session, user.id, cloudinary_url, PhotoType.CLOTHING, public_id
+            # Получаем пользователя из БД
+            from app.models.user import User
+            from sqlalchemy import select
+            
+            result = await session.execute(
+                select(User).where(User.telegram_id == user.id)
             )
+            db_user = result.scalar_one_or_none()
+            
+            if db_user:
+                await file_service.save_photo_to_database(
+                    session, db_user.id, cloudinary_url, PhotoType.CLOTHING, public_id
+                )
+            else:
+                await message.answer("❌ Пользователь не найден в базе данных.")
+                return
         
         await message.answer("✅ Фото одежды сохранено!")
         

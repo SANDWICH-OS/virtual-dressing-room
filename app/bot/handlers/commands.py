@@ -109,6 +109,7 @@ async def profile_command(message: Message, state: FSMContext):
             
             # Получаем количество загруженных фото
             if db_user:
+                logger.info(f"Profile: Looking for photos with user_id = {db_user.id}")
                 user_photo_count = await session.scalar(
                     select(func.count(UserPhoto.id)).where(
                         UserPhoto.user_id == db_user.id,
@@ -122,9 +123,12 @@ async def profile_command(message: Message, state: FSMContext):
                         UserPhoto.photo_type == PhotoType.CLOTHING
                     )
                 ) or 0
+                
+                logger.info(f"Profile: Found {user_photo_count} user photos, {clothing_count} clothing photos")
             else:
                 user_photo_count = 0
                 clothing_count = 0
+                logger.info("Profile: No user found in database")
             
             # Формируем информацию о профиле
             if db_user:
