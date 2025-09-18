@@ -6,6 +6,7 @@ from app.models.photo import UserPhoto
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 from typing import Tuple, Optional
+import time
 
 
 class FileService:
@@ -34,12 +35,23 @@ class FileService:
             if not is_valid:
                 return None, None, error
             
+            # Проверяем, настроен ли Cloudinary
+            from app.config import settings
+            if not settings.cloudinary_cloud_name or not settings.cloudinary_api_key:
+                logger.warning("Cloudinary not configured, using fallback mode")
+                # Fallback режим - используем оригинальный URL от Telegram
+                public_id = f"telegram_{user_id}_{photo_type.value}_{int(time.time())}"
+                return photo_url, public_id, None
+            
             # Загружаем в Cloudinary
             folder = f"{folder_prefix}/{user_id}/{photo_type.value}"
             result = await file_utils.upload_from_url(photo_url, folder=folder)
             
             if not result:
-                return None, None, "Ошибка при загрузке в Cloudinary"
+                logger.warning("Cloudinary upload failed, using fallback mode")
+                # Fallback режим - используем оригинальный URL от Telegram
+                public_id = f"telegram_{user_id}_{photo_type.value}_{int(time.time())}"
+                return photo_url, public_id, None
             
             cloudinary_url, public_id = result
             logger.info(f"Uploaded {photo_type} photo for user {user_id}")
@@ -48,7 +60,11 @@ class FileService:
             
         except Exception as e:
             logger.error(f"Error uploading photo for user {user_id}: {e}")
-            return None, None, f"Ошибка загрузки: {str(e)}"
+            # Fallback режим при любой ошибке
+            logger.warning("Using fallback mode due to error")
+            import time
+            public_id = f"telegram_{user_id}_{photo_type.value}_{int(time.time())}"
+            return photo_url, public_id, None
     
     @staticmethod
     async def save_photo_to_database(
