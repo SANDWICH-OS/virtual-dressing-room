@@ -25,20 +25,27 @@ class ImageValidator:
             Tuple[is_valid, error_message]
         """
         try:
+            logger.info(f"Validating image URL: {url}")
             async with httpx.AsyncClient() as client:
                 response = await client.head(url, timeout=10.0)
+                
+                logger.info(f"Response status: {response.status_code}")
+                logger.info(f"Content-Type: {response.headers.get('content-type', '')}")
+                logger.info(f"Content-Length: {response.headers.get('content-length', '')}")
                 
                 if response.status_code != 200:
                     return False, f"Изображение недоступно (код: {response.status_code})"
                 
                 content_type = response.headers.get("content-type", "")
                 if not content_type.startswith("image/"):
+                    logger.error(f"Invalid content type: {content_type}")
                     return False, "Файл не является изображением"
                 
                 content_length = response.headers.get("content-length")
                 if content_length and int(content_length) > cls.MAX_FILE_SIZE:
                     return False, f"Файл слишком большой (максимум {cls.MAX_FILE_SIZE // (1024*1024)}MB)"
                 
+                logger.info("Image URL validation passed")
                 return True, ""
                 
         except Exception as e:
@@ -70,8 +77,13 @@ class ImageValidator:
                 try:
                     image = Image.open(io.BytesIO(response.content))
                     
+                    logger.info(f"Image format: {image.format}")
+                    logger.info(f"Image size: {image.size}")
+                    logger.info(f"Image mode: {image.mode}")
+                    
                     # Проверяем формат
                     if image.format not in cls.ALLOWED_FORMATS:
+                        logger.error(f"Unsupported format: {image.format}, allowed: {cls.ALLOWED_FORMATS}")
                         return False, f"Неподдерживаемый формат. Разрешены: {', '.join(cls.ALLOWED_FORMATS)}"
                     
                     # Проверяем размеры
@@ -82,6 +94,7 @@ class ImageValidator:
                     if width > cls.MAX_DIMENSIONS[0] or height > cls.MAX_DIMENSIONS[1]:
                         return False, f"Изображение слишком большое (максимум {cls.MAX_DIMENSIONS[0]}x{cls.MAX_DIMENSIONS[1]}px)"
                     
+                    logger.info("Image content validation passed")
                     return True, ""
                     
                 except Exception as e:

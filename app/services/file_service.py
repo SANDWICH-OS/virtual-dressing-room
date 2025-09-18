@@ -141,6 +141,10 @@ class FileService:
             file = await bot.get_file(photo.file_id)
             photo_url = f"https://api.telegram.org/file/bot{bot.token}/{file.file_path}"
             
+            logger.info(f"Processing Telegram photo: {photo_url}")
+            logger.info(f"File path: {file.file_path}")
+            logger.info(f"File size: {photo.file_size}")
+            
             # Загружаем в Cloudinary
             return await FileService.upload_user_photo(
                 photo_url, user_id, photo_type

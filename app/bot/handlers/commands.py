@@ -87,26 +87,107 @@ async def help_command(message: Message, state: FSMContext):
 
 async def profile_command(message: Message, state: FSMContext):
     """Обработчик команды /profile"""
-    from app.bot.keyboards import ProfileKeyboard
+    from app.database.async_session import get_async_session
+    from app.models.user import User
+    from app.models.photo import UserPhoto, PhotoType
+    from sqlalchemy import select, func
     
     # Очищаем состояние
     await state.clear()
     
-    profile_text = """
-👤 <b>Управление профилем</b>
+    user = message.from_user
+    
+    try:
+        # Получаем информацию о пользователе из БД
+        async with get_async_session() as session:
+            # Получаем пользователя
+            result = await session.execute(
+                select(User).where(User.telegram_id == user.id)
+            )
+            db_user = result.scalar_one_or_none()
+            
+            # Получаем количество загруженных фото
+            selfie_count = await session.scalar(
+                select(func.count(UserPhoto.id)).where(
+                    UserPhoto.user_id == user.id,
+                    UserPhoto.photo_type == PhotoType.SELFIE
+                )
+            ) or 0
+            
+            fullbody_count = await session.scalar(
+                select(func.count(UserPhoto.id)).where(
+                    UserPhoto.user_id == user.id,
+                    UserPhoto.photo_type == PhotoType.FULL_BODY
+                )
+            ) or 0
+            
+            clothing_count = await session.scalar(
+                select(func.count(UserPhoto.id)).where(
+                    UserPhoto.user_id == user.id,
+                    UserPhoto.photo_type == PhotoType.CLOTHING
+                )
+            ) or 0
+            
+            # Формируем информацию о профиле
+            if db_user:
+                subscription_info = "🆓 Бесплатная" if db_user.subscription_type == "free" else f"💎 {db_user.subscription_type.title()}"
+                generation_count = db_user.generation_count or 0
+                created_at = db_user.created_at.strftime("%d.%m.%Y") if db_user.created_at else "Неизвестно"
+            else:
+                subscription_info = "🆓 Бесплатная"
+                generation_count = 0
+                created_at = "Неизвестно"
+            
+            profile_text = f"""
+👤 <b>Мой профиль</b>
 
-Здесь ты можешь:
-• Загрузить свои фото
-• Посмотреть сохраненные фото
-• Удалить ненужные фото
-    """
+🆔 <b>ID:</b> {user.id}
+👤 <b>Имя:</b> {user.first_name or 'Не указано'}
+📧 <b>Username:</b> @{user.username or 'Не указан'}
+💳 <b>Подписка:</b> {subscription_info}
+🎨 <b>Генераций использовано:</b> {generation_count}
+📅 <b>Дата регистрации:</b> {created_at}
+
+📸 <b>Загруженные фото:</b>
+• Селфи: {selfie_count}
+• В полный рост: {fullbody_count}
+• Одежда: {clothing_count}
+
+{'✅ Профиль готов к использованию!' if selfie_count > 0 and fullbody_count > 0 else '⚠️ Загрузи фото для создания профиля'}
+            """
+            
+            await message.answer(
+                profile_text,
+                reply_markup=MainKeyboard.get_main_menu()
+            )
+            
+    except Exception as e:
+        logger.error(f"Error getting profile info for user {user.id}: {e}")
+        # Fallback информация без БД
+        profile_text = f"""
+👤 <b>Мой профиль</b>
+
+🆔 <b>ID:</b> {user.id}
+👤 <b>Имя:</b> {user.first_name or 'Не указано'}
+📧 <b>Username:</b> @{user.username or 'Не указан'}
+💳 <b>Подписка:</b> 🆓 Бесплатная
+🎨 <b>Генераций использовано:</b> 0
+📅 <b>Дата регистрации:</b> Неизвестно
+
+📸 <b>Загруженные фото:</b>
+• Селфи: 0
+• В полный рост: 0
+• Одежда: 0
+
+⚠️ Загрузи фото для создания профиля
+        """
+        
+        await message.answer(
+            profile_text,
+            reply_markup=MainKeyboard.get_main_menu()
+        )
     
-    await message.answer(
-        profile_text,
-        reply_markup=ProfileKeyboard.get_photo_upload_keyboard()
-    )
-    
-    logger.info(f"User {message.from_user.id} opened profile")
+    logger.info(f"User {message.from_user.id} viewed profile")
 
 
 async def test_vmodel_command(message: Message, state: FSMContext):
