@@ -201,6 +201,7 @@ async def test_vmodel_command(message: Message, state: FSMContext):
     # Проверяем наличие фото пользователя и одежды
     try:
         from app.database.async_session import get_async_session
+        from app.models.user import User
         from app.models.photo import UserPhoto, PhotoType
         from sqlalchemy import select, and_
         
@@ -308,6 +309,7 @@ async def test_fashn_command(message: Message, state: FSMContext):
     # Проверяем наличие фото пользователя и одежды
     try:
         from app.database.async_session import get_async_session
+        from app.models.user import User
         from app.models.photo import UserPhoto, PhotoType
         from sqlalchemy import select, and_
         
@@ -415,6 +417,7 @@ async def test_pixelcut_command(message: Message, state: FSMContext):
     # Проверяем наличие фото пользователя и одежды
     try:
         from app.database.async_session import get_async_session
+        from app.models.user import User
         from app.models.photo import UserPhoto, PhotoType
         from sqlalchemy import select, and_
         
