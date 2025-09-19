@@ -12,7 +12,12 @@ from loguru import logger
 
 # Определяем, какая конфигурация использовать
 def get_settings():
-    """Получить настройки в зависимости от окружения"""
+    """
+    Получить настройки в зависимости от окружения
+    
+    Returns:
+        Settings: Конфигурация для локальной разработки или продакшн
+    """
     if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"):
         # В Railway используем production конфигурацию
         from app import config_prod
@@ -23,7 +28,12 @@ def get_settings():
 
 
 async def init_database():
-    """Инициализация базы данных - создание таблиц"""
+    """
+    Инициализация базы данных - создание таблиц
+    
+    Создает все таблицы в базе данных на основе SQLAlchemy моделей.
+    Вызывается при запуске бота для обеспечения корректной работы.
+    """
     try:
         # Создаем все таблицы
         async with engine.begin() as conn:

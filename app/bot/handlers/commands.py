@@ -11,7 +11,16 @@ from datetime import datetime
 
 
 async def start_command(message: Message, state: FSMContext):
-    """Обработчик команды /start"""
+    """
+    Обработчик команды /start
+    
+    Приветствует пользователя, показывает доступные команды
+    и переводит в состояние 'authorized'.
+    
+    Args:
+        message: Сообщение от пользователя
+        state: FSM контекст для управления состояниями
+    """
     user = message.from_user
     
     # Очищаем состояние
@@ -87,7 +96,18 @@ async def help_command(message: Message, state: FSMContext):
 
 
 async def profile_command(message: Message, state: FSMContext):
-    """Обработчик команды /profile"""
+    """
+    Обработчик команды /profile
+    
+    Показывает информацию о профиле пользователя:
+    - ID пользователя, имя, подписка
+    - Количество загруженных фото (пользователь/одежда)
+    - Дата регистрации и количество генераций
+    
+    Args:
+        message: Сообщение от пользователя
+        state: FSM контекст для управления состояниями
+    """
     from app.database.async_session import get_async_session
     from app.models.user import User
     from app.models.photo import UserPhoto, PhotoType
