@@ -1,4 +1,6 @@
-from app.utils.file_utils import file_utils
+# file_utils удален, используем прямую интеграцию с Cloudinary
+import cloudinary
+import cloudinary.uploader
 from app.utils.validators import image_validator
 from app.models.photo import PhotoType
 from app.database.async_session import get_async_session
@@ -7,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 from typing import Tuple, Optional
 import time
+from app.config import settings
 
 
 class FileService:
@@ -43,17 +46,30 @@ class FileService:
                 public_id = f"telegram_{user_id}_{photo_type.value}_{int(time.time())}"
                 return photo_url, public_id, None
             
+            # Настраиваем Cloudinary
+            cloudinary.config(
+                cloud_name=settings.cloudinary_cloud_name,
+                api_key=settings.cloudinary_api_key,
+                api_secret=settings.cloudinary_api_secret
+            )
+            
             # Загружаем в Cloudinary
             folder = f"{folder_prefix}/{user_id}/{photo_type.value}"
-            result = await file_utils.upload_from_url(photo_url, folder=folder)
-            
-            if not result:
-                logger.warning("Cloudinary upload failed, using fallback mode")
+            try:
+                result = cloudinary.uploader.upload(
+                    photo_url,
+                    folder=folder,
+                    resource_type="image",
+                    quality="auto",
+                    fetch_format="auto"
+                )
+                cloudinary_url = result["secure_url"]
+                public_id = result["public_id"]
+            except Exception as e:
+                logger.warning(f"Cloudinary upload failed: {e}, using fallback mode")
                 # Fallback режим - используем оригинальный URL от Telegram
                 public_id = f"telegram_{user_id}_{photo_type.value}_{int(time.time())}"
                 return photo_url, public_id, None
-            
-            cloudinary_url, public_id = result
             logger.info(f"Uploaded {photo_type} photo for user {user_id}")
             
             return cloudinary_url, public_id, None
@@ -86,7 +102,10 @@ class FileService:
         
         if old_photo:
             # Удаляем старое фото из Cloudinary
-            await file_utils.delete_photo(old_photo.cloudinary_public_id)
+            try:
+                cloudinary.uploader.destroy(old_photo.cloudinary_public_id)
+            except Exception as e:
+                logger.warning(f"Failed to delete old photo from Cloudinary: {e}")
             await session.delete(old_photo)
         
         # Создаем новое фото
@@ -123,7 +142,10 @@ class FileService:
         if photo:
             # Удаляем из Cloudinary
             if photo.cloudinary_public_id:
-                await file_utils.delete_photo(photo.cloudinary_public_id)
+                try:
+                    cloudinary.uploader.destroy(photo.cloudinary_public_id)
+                except Exception as e:
+                    logger.warning(f"Failed to delete photo from Cloudinary: {e}")
             
             # Удаляем из БД
             await session.delete(photo)
@@ -137,7 +159,19 @@ class FileService:
     @staticmethod
     async def get_photo_info(public_id: str) -> Optional[dict]:
         """Получить информацию о фото"""
-        return await file_utils.get_photo_info(public_id)
+        try:
+            result = cloudinary.api.resource(public_id)
+            return {
+                "url": result["secure_url"],
+                "width": result["width"],
+                "height": result["height"],
+                "format": result["format"],
+                "bytes": result["bytes"],
+                "created_at": result["created_at"]
+            }
+        except Exception as e:
+            logger.error(f"Error getting photo info from Cloudinary: {e}")
+            return None
     
     @staticmethod
     async def process_telegram_photo(
