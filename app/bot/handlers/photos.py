@@ -2,7 +2,7 @@ from aiogram import Dispatcher
 from aiogram.types import Message, PhotoSize
 from aiogram.fsm.context import FSMContext
 from app.bot.states import UserStates
-from app.bot.keyboards import MainKeyboard, ProfileKeyboard
+from app.bot.keyboards import MainKeyboard
 from app.services.file_service import file_service
 from app.models.photo import PhotoType
 from app.database.async_session import get_async_session

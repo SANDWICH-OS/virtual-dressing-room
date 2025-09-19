@@ -1,3 +1,3 @@
-from .main import MainKeyboard, ProfileKeyboard, TryOnKeyboard
+from .main import MainKeyboard
 
-__all__ = ["MainKeyboard", "ProfileKeyboard", "TryOnKeyboard"]
+__all__ = ["MainKeyboard"]
