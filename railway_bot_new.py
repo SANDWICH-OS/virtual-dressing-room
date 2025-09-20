@@ -33,7 +33,7 @@ logger.add(
 async def main():
     """Главная функция запуска бота"""
     try:
-        logger.info("🚀 Starting Virtual Try-On Bot (Railway Production)...")
+        logger.info("🚀 Starting Virtual Try-On Bot (Railway Production) - v2...")
         
         # Логируем переменные окружения для отладки
         logger.info(f"BOT_TOKEN: {'✅ Set' if os.getenv('BOT_TOKEN') else '❌ Missing'}")
