@@ -21,5 +21,3 @@ class User(Base):
     
     # Relationships
     photos = relationship("UserPhoto", back_populates="user", cascade="all, delete-orphan")
-    tryon_requests = relationship("TryOnRequest", back_populates="user", cascade="all, delete-orphan")
-    payments = relationship("Payment", back_populates="user", cascade="all, delete-orphan")
