@@ -1,1 +1,1 @@
-web: python3 working_bot.py
+web: python app/webhook_server.py

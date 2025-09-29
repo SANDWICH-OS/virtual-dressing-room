@@ -4,6 +4,7 @@ FastAPI сервер для обработки webhook'ов от Fashn AI
 
 import os
 import sys
+import asyncio
 from pathlib import Path
 from fastapi import FastAPI
 from loguru import logger
@@ -18,6 +19,9 @@ load_dotenv()
 
 # Импортируем webhook handlers
 from app.bot.webhook_handlers import setup_webhook_routes
+
+# Импортируем Telegram бот
+from app.bot.bot import start_bot
 
 # Создаем FastAPI приложение
 app = FastAPI(
@@ -46,6 +50,19 @@ async def health():
         "service": "webhook_server"
     }
 
+async def startup():
+    """Запуск Telegram бота в фоне"""
+    try:
+        logger.info("🤖 Starting Telegram bot in background...")
+        await start_bot()
+    except Exception as e:
+        logger.error(f"❌ Error starting Telegram bot: {e}")
+
+@app.on_event("startup")
+async def startup_event():
+    """Запускаем Telegram бот при старте FastAPI"""
+    asyncio.create_task(startup())
+
 if __name__ == "__main__":
     import uvicorn
     
@@ -57,10 +74,15 @@ if __name__ == "__main__":
         from app.config import settings
     
     # Запускаем сервер
+    # В Railway используем порт из переменной окружения или стандартный 8080
+    port = int(os.getenv("PORT", 8080))
+    
+    logger.info(f"🚀 Starting webhook server on port {port}")
+    
     uvicorn.run(
         "app.webhook_server:app",
-        host=settings.host,
-        port=settings.port + 1,  # Используем другой порт для webhook сервера
+        host="0.0.0.0",
+        port=port,
         reload=settings.debug,
         log_level="info"
     )
