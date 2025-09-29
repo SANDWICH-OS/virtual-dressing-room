@@ -242,3 +242,4 @@ python railway_bot_new.py
 - [ ] Система платежей и подписок
 - [ ] Тесты
 - [ ] Админ-панель
+# Force Railway redeploy
