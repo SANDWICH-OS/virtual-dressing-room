@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     replicate_api_token: Optional[str] = None
     openai_api_key: Optional[str] = None
     
+    # Fashn AI API
+    fashn_api_key: Optional[str] = None
+    fashn_api_url: str = "https://api.fashn.ai"
+    fashn_webhook_url: Optional[str] = None
+    fashn_model_name: str = "tryon-v1.6"
+    
     # Payment Systems
     yoomoney_shop_id: Optional[str] = None
     yoomoney_secret_key: Optional[str] = None

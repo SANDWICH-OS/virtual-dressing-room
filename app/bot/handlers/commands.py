@@ -384,6 +384,10 @@ async def test_fashn_command(message: Message, state: FSMContext):
         )
         return
     
+    # Импортируем FashnService
+    from app.services.fashn_service import fashn_service
+    from app.services.redis_service import redis_service
+    
     start_time = datetime.now()
     
     # Логируем запрос
@@ -400,34 +404,51 @@ async def test_fashn_command(message: Message, state: FSMContext):
         reply_markup=MainKeyboard.get_main_menu()
     )
     
-    # Заглушка для Fashn
-    await asyncio.sleep(3)
-    processing_time = (datetime.now() - start_time).total_seconds()
-    
-    # Логируем ответ
-    await ai_logging_service.log_ai_response(
-        user_id=user.id,
-        service_name="Fashn",
-        response_data={"status": "success", "result_type": "try_on_image"},
-        processing_time=processing_time,
-        success=True
+    # Отправляем запрос в Fashn AI
+    success, message, prediction_id = await fashn_service.submit_tryon_request(
+        user_photo_url=user_photo.cloudinary_url,
+        clothing_photo_url=clothing_photo.cloudinary_url,
+        user_id=user.id
     )
     
-    # Логируем метрики качества
-    await ai_logging_service.log_ai_quality_metrics(
-        user_id=user.id,
-        service_name="Fashn",
-        quality_score=5,
-        processing_time=processing_time
-    )
-    
-    await state.set_state(UserStates.authorized)
-    await message.answer(
-        "🎉 <b>Fashn результат готов!</b>\n\n(Это заглушка - реальная интеграция будет в Фазе 4.3)\n\nКачество: ⭐⭐⭐⭐⭐\nВремя обработки: 1.8 сек",
-        reply_markup=MainKeyboard.get_main_menu()
-    )
-    
-    logger.info(f"User {user.id} tested Fashn service")
+    if success and prediction_id:
+        # Сохраняем контекст для webhook обработки
+        await redis_service.set_json(
+            f"fashn_prediction:{prediction_id}",
+            {
+                "user_id": user.id,
+                "start_time": start_time.isoformat(),
+                "user_photo_url": user_photo.cloudinary_url,
+                "clothing_photo_url": clothing_photo.cloudinary_url
+            },
+            expire=3600  # 1 час
+        )
+        
+        await message.answer(
+            f"✅ <b>Запрос отправлен в Fashn AI!</b>\n\n{message}\n\nОжидайте результат через webhook...",
+            reply_markup=MainKeyboard.get_main_menu()
+        )
+        
+        logger.info(f"User {user.id} submitted Fashn request with prediction ID: {prediction_id}")
+    else:
+        # Обработка ошибок
+        await state.set_state(UserStates.authorized)
+        await message.answer(
+            f"❌ <b>Ошибка Fashn AI</b>\n\n{message}",
+            reply_markup=MainKeyboard.get_main_menu()
+        )
+        
+        # Логируем ошибку
+        await ai_logging_service.log_ai_response(
+            user_id=user.id,
+            service_name="Fashn",
+            response_data={"error": message},
+            processing_time=(datetime.now() - start_time).total_seconds(),
+            success=False,
+            error_message=message
+        )
+        
+        logger.error(f"Fashn request failed for user {user.id}: {message}")
 
 
 async def test_pixelcut_command(message: Message, state: FSMContext):

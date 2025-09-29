@@ -26,6 +26,12 @@ class ProductionSettings(BaseSettings):
     openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
     replicate_api_token: Optional[str] = os.getenv("REPLICATE_API_TOKEN")
     
+    # Fashn AI API
+    fashn_api_key: Optional[str] = os.getenv("FASHN_API_KEY")
+    fashn_api_url: str = "https://api.fashn.ai"
+    fashn_webhook_url: Optional[str] = os.getenv("FASHN_WEBHOOK_URL")
+    fashn_model_name: str = "tryon-v1.6"
+    
     # Payment systems (placeholders for now)
     yoomoney_shop_id: Optional[str] = os.getenv("YOOMONEY_SHOP_ID")
     yoomoney_secret_key: Optional[str] = os.getenv("YOOMONEY_SECRET_KEY")
