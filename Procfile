@@ -1,1 +1,1 @@
-web: python app/webhook_server.py
+web: python railway_bot_with_webhook.py
