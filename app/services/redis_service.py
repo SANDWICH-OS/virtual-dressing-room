@@ -61,6 +61,14 @@ class RedisService:
                 return None
         return None
     
+    async def set_json(self, key: str, value: Any, expire: Optional[int] = None) -> bool:
+        """Установить JSON значение"""
+        if not self.redis:
+            await self.connect()
+        
+        json_value = json.dumps(value)
+        return await self.redis.set(key, json_value, ex=expire)
+    
     async def delete(self, key: str) -> bool:
         """Удалить ключ"""
         if not self.redis:
