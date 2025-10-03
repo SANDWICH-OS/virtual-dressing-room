@@ -406,8 +406,8 @@ async def test_fashn_command(message: Message, state: FSMContext):
     
     # Отправляем запрос в Fashn AI
     success, message, prediction_id = await fashn_service.submit_tryon_request(
-        user_photo_url=user_photo.cloudinary_url,
-        clothing_photo_url=clothing_photo.cloudinary_url,
+        user_photo_url=user_photo.photo_url,
+        clothing_photo_url=clothing_photo.photo_url,
         user_id=user.id
     )
     
@@ -418,8 +418,8 @@ async def test_fashn_command(message: Message, state: FSMContext):
             {
                 "user_id": user.id,
                 "start_time": start_time.isoformat(),
-                "user_photo_url": user_photo.cloudinary_url,
-                "clothing_photo_url": clothing_photo.cloudinary_url
+                "user_photo_url": user_photo.photo_url,
+                "clothing_photo_url": clothing_photo.photo_url
             },
             expire=3600  # 1 час
         )
