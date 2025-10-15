@@ -83,20 +83,53 @@ class WebhookHandler:
             output_urls = webhook_data.get("output", [])
             
             if output_urls:
-                # Отправляем первое изображение как фото
-                await self.bot.send_photo(
-                    chat_id=user_id,
-                    photo=output_urls[0],
-                    caption=f"🎉 <b>Генерация завершена!</b>\n\n{message}"
-                )
+                # Проверяем, является ли первый результат base64
+                first_output = output_urls[0]
+                if first_output.startswith("data:image/"):
+                    # Это base64 - конвертируем в файл
+                    import base64
+                    import io
+                    from aiogram.types import BufferedInputFile
+                    
+                    # Извлекаем base64 данные
+                    header, data = first_output.split(",", 1)
+                    image_data = base64.b64decode(data)
+                    
+                    # Создаем BufferedInputFile
+                    photo_file = BufferedInputFile(image_data, filename="result.png")
+                    
+                    await self.bot.send_photo(
+                        chat_id=user_id,
+                        photo=photo_file,
+                        caption=f"🎉 <b>Генерация завершена!</b>\n\n{message}"
+                    )
+                else:
+                    # Это URL - отправляем как обычно
+                    await self.bot.send_photo(
+                        chat_id=user_id,
+                        photo=first_output,
+                        caption=f"🎉 <b>Генерация завершена!</b>\n\n{message}"
+                    )
                 
                 # Если есть дополнительные изображения, отправляем их
                 for i, url in enumerate(output_urls[1:], 2):
-                    await self.bot.send_photo(
-                        chat_id=user_id,
-                        photo=url,
-                        caption=f"📸 <b>Дополнительный результат {i}</b>"
-                    )
+                    if url.startswith("data:image/"):
+                        # Обрабатываем base64
+                        header, data = url.split(",", 1)
+                        image_data = base64.b64decode(data)
+                        photo_file = BufferedInputFile(image_data, filename=f"result_{i}.png")
+                        await self.bot.send_photo(
+                            chat_id=user_id,
+                            photo=photo_file,
+                            caption=f"📸 <b>Дополнительный результат {i}</b>"
+                        )
+                    else:
+                        # Обычный URL
+                        await self.bot.send_photo(
+                            chat_id=user_id,
+                            photo=url,
+                            caption=f"📸 <b>Дополнительный результат {i}</b>"
+                        )
             else:
                 await self.bot.send_message(
                     chat_id=user_id,

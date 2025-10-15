@@ -297,7 +297,7 @@ async def test_fashn_command(message: Message, state: FSMContext):
     )
     
     # Отправляем запрос в Fashn AI
-    success, message, prediction_id = await fashn_service.submit_tryon_request(
+    success, response_message, prediction_id = await fashn_service.submit_tryon_request(
         user_photo_url=user_photo.photo_url,
         clothing_photo_url=clothing_photo.photo_url,
         user_id=user.id
@@ -317,7 +317,7 @@ async def test_fashn_command(message: Message, state: FSMContext):
         )
         
         await message.answer(
-            f"✅ <b>Запрос отправлен в Fashn AI!</b>\n\n{message}\n\nОжидайте результат через webhook...",
+            f"✅ <b>Запрос отправлен в Fashn AI!</b>\n\n{response_message}\n\nОжидайте результат через webhook...",
             reply_markup=MainKeyboard.get_main_menu()
         )
         
@@ -326,7 +326,7 @@ async def test_fashn_command(message: Message, state: FSMContext):
         # Обработка ошибок
         await state.set_state(UserStates.authorized)
         await message.answer(
-            f"❌ <b>Ошибка Fashn AI</b>\n\n{message}",
+            f"❌ <b>Ошибка Fashn AI</b>\n\n{response_message}",
             reply_markup=MainKeyboard.get_main_menu()
         )
         
