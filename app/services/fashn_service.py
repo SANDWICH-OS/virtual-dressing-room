@@ -60,7 +60,16 @@ class FashnService:
                 "type": "try_on_generation",
                 "user_photo_url": user_photo_url,
                 "clothing_photo_url": clothing_photo_url,
-                "model_name": self.model_name
+                "model_name": self.model_name,
+                "category": self.settings.fashn_category,
+                "segmentation_free": self.settings.fashn_segmentation_free,
+                "moderation_level": self.settings.fashn_moderation_level,
+                "garment_photo_type": self.settings.fashn_garment_photo_type,
+                "mode": self.settings.fashn_mode,
+                "seed": self.settings.fashn_seed,
+                "num_samples": self.settings.fashn_num_samples,
+                "output_format": self.settings.fashn_output_format,
+                "return_base64": self.settings.fashn_return_base64
             },
             start_time=start_time
         )
@@ -72,7 +81,16 @@ class FashnService:
                     "model_name": self.model_name,
                     "inputs": {
                         "model_image": user_photo_url,
-                        "garment_image": clothing_photo_url
+                        "garment_image": clothing_photo_url,
+                        "category": self.settings.fashn_category,
+                        "segmentation_free": self.settings.fashn_segmentation_free,
+                        "moderation_level": self.settings.fashn_moderation_level,
+                        "garment_photo_type": self.settings.fashn_garment_photo_type,
+                        "mode": self.settings.fashn_mode,
+                        "seed": self.settings.fashn_seed,
+                        "num_samples": self.settings.fashn_num_samples,
+                        "output_format": self.settings.fashn_output_format,
+                        "return_base64": self.settings.fashn_return_base64
                     }
                 }
                 

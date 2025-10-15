@@ -23,6 +23,17 @@ class Settings(BaseSettings):
     fashn_webhook_url: Optional[str] = None
     fashn_model_name: str = "tryon-v1.6"
     
+    # Fashn API Optional Parameters
+    fashn_category: str = "auto"
+    fashn_segmentation_free: bool = True
+    fashn_moderation_level: str = "permissive"
+    fashn_garment_photo_type: str = "auto"
+    fashn_mode: str = "balanced"
+    fashn_seed: int = 42
+    fashn_num_samples: int = 1
+    fashn_output_format: str = "png"
+    fashn_return_base64: bool = False
+    
     # Payment Systems
     yoomoney_shop_id: Optional[str] = None
     yoomoney_secret_key: Optional[str] = None
