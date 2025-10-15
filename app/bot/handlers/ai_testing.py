@@ -21,7 +21,7 @@ async def handle_general_text_messages(message: Message, state: FSMContext):
     from .commands import (
         profile_command, help_command, upload_user_photo_command, 
         upload_clothing_photo_command,
-        test_vmodel_command, test_fashn_command, test_pixelcut_command,
+        test_fashn_command,
         clear_command
     )
     
@@ -45,12 +45,8 @@ async def handle_general_text_messages(message: Message, state: FSMContext):
             await upload_user_photo_command(message, state)
         elif text == "👗 Загрузить фото одежды":
             await upload_clothing_photo_command(message, state)
-        elif text == "🤖 Тест VModel":
-            await test_vmodel_command(message, state)
         elif text == "👗 Тест Fashn":
             await test_fashn_command(message, state)
-        elif text == "✂️ Тест Pixelcut":
-            await test_pixelcut_command(message, state)
         elif text == "💳 Подписка":
             await message.answer(
                 "💳 <b>Управление подпиской</b>\n\nЭта функция будет доступна в следующих версиях бота.",
@@ -76,12 +72,8 @@ async def handle_general_text_messages(message: Message, state: FSMContext):
             await upload_user_photo_command(message, state)
         elif text == "👗 Загрузить фото одежды":
             await upload_clothing_photo_command(message, state)
-        elif text == "🤖 Тест VModel":
-            await test_vmodel_command(message, state)
         elif text == "👗 Тест Fashn":
             await test_fashn_command(message, state)
-        elif text == "✂️ Тест Pixelcut":
-            await test_pixelcut_command(message, state)
         elif text == "💳 Подписка":
             await message.answer(
                 "💳 <b>Управление подпиской</b>\n\nЭта функция будет доступна в следующих версиях бота.",
@@ -105,12 +97,8 @@ async def handle_general_text_messages(message: Message, state: FSMContext):
             await upload_user_photo_command(message, state)
         elif text == "👗 Загрузить фото одежды":
             await upload_clothing_photo_command(message, state)
-        elif text == "🤖 Тест VModel":
-            await test_vmodel_command(message, state)
         elif text == "👗 Тест Fashn":
             await test_fashn_command(message, state)
-        elif text == "✂️ Тест Pixelcut":
-            await test_pixelcut_command(message, state)
         elif text == "💳 Подписка":
             await message.answer(
                 "💳 <b>Управление подпиской</b>\n\nЭта функция будет доступна в следующих версиях бота.",
