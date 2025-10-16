@@ -65,10 +65,14 @@ async def handle_user_photo(message: Message, photo: PhotoSize, state: FSMContex
                 # Сохраняем URL фото в Redis
                 try:
                     from app.services.redis_service import redis_service
-                    await redis_service.update_user_field(user.id, "user_photo_url", cloudinary_url)
-                    logger.info(f"User {user.id} photo URL saved to Redis")
+                    logger.info(f"Attempting to save photo URL to Redis for user {user.id}: {cloudinary_url}")
+                    result = await redis_service.update_user_field(user.id, "user_photo_url", cloudinary_url)
+                    logger.info(f"User {user.id} photo URL saved to Redis successfully: {result}")
                 except Exception as e:
                     logger.error(f"Failed to save photo URL to Redis for user {user.id}: {e}")
+                    logger.error(f"Exception type: {type(e).__name__}")
+                    import traceback
+                    logger.error(f"Traceback: {traceback.format_exc()}")
             else:
                 await message.answer("❌ Пользователь не найден в базе данных.")
                 return
@@ -122,10 +126,14 @@ async def handle_clothing_photo(message: Message, photo: PhotoSize, state: FSMCo
                 # Сохраняем URL фото в Redis
                 try:
                     from app.services.redis_service import redis_service
-                    await redis_service.update_user_field(user.id, "clothing_photo_url", cloudinary_url)
-                    logger.info(f"User {user.id} clothing photo URL saved to Redis")
+                    logger.info(f"Attempting to save clothing photo URL to Redis for user {user.id}: {cloudinary_url}")
+                    result = await redis_service.update_user_field(user.id, "clothing_photo_url", cloudinary_url)
+                    logger.info(f"User {user.id} clothing photo URL saved to Redis successfully: {result}")
                 except Exception as e:
                     logger.error(f"Failed to save clothing photo URL to Redis for user {user.id}: {e}")
+                    logger.error(f"Exception type: {type(e).__name__}")
+                    import traceback
+                    logger.error(f"Traceback: {traceback.format_exc()}")
             else:
                 await message.answer("❌ Пользователь не найден в базе данных.")
                 return

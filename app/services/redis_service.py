@@ -63,11 +63,22 @@ class RedisService:
     
     async def set_json(self, key: str, value: Any, expire: Optional[int] = None) -> bool:
         """Установить JSON значение"""
+        from loguru import logger
+        logger.info(f"set_json called: key={key}, value={value}, expire={expire}")
+        
         if not self.redis:
+            logger.info("Redis not connected, attempting to connect...")
             await self.connect()
         
-        json_value = json.dumps(value)
-        return await self.redis.set(key, json_value, ex=expire)
+        try:
+            json_value = json.dumps(value)
+            logger.info(f"JSON serialized: {json_value}")
+            result = await self.redis.set(key, json_value, ex=expire)
+            logger.info(f"Redis SET result: {result}")
+            return result
+        except Exception as e:
+            logger.error(f"Error in set_json: {e}")
+            raise
     
     async def delete(self, key: str) -> bool:
         """Удалить ключ"""
@@ -131,14 +142,36 @@ class RedisService:
         Returns:
             bool: True если успешно сохранено
         """
+        from loguru import logger
         key = f"user:{user_id}:data"
-        return await self.set_json(key, data, expire=expire)
+        logger.info(f"set_user_data called: key={key}, data={data}, expire={expire}")
+        
+        try:
+            result = await self.set_json(key, data, expire=expire)
+            logger.info(f"set_json result: {result}")
+            return result
+        except Exception as e:
+            logger.error(f"Error in set_user_data: {e}")
+            raise
 
     async def update_user_field(self, user_id: int, field: str, value: Any) -> bool:
         """Обновить конкретное поле пользователя"""
-        user_data = await self.get_user_data(user_id) or {}
-        user_data[field] = value
-        return await self.set_user_data(user_id, user_data)
+        from loguru import logger
+        logger.info(f"update_user_field called: user_id={user_id}, field={field}, value={value}")
+        
+        try:
+            user_data = await self.get_user_data(user_id) or {}
+            logger.info(f"Current user data: {user_data}")
+            
+            user_data[field] = value
+            logger.info(f"Updated user data: {user_data}")
+            
+            result = await self.set_user_data(user_id, user_data)
+            logger.info(f"set_user_data result: {result}")
+            return result
+        except Exception as e:
+            logger.error(f"Error in update_user_field: {e}")
+            raise
 
     async def get_user_field(self, user_id: int, field: str, default: Any = None) -> Any:
         """Получить конкретное поле пользователя"""
