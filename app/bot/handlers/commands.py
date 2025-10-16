@@ -150,6 +150,17 @@ async def profile_command(message: Message, state: FSMContext):
                 clothing_count = 0
                 logger.info("Profile: No user found in database")
             
+            # Проверяем наличие фото в Redis (приоритет над БД)
+            from app.services.redis_service import redis_service
+            redis_data = await redis_service.get_user_data(user.id)
+            
+            has_user_photo_redis = bool(redis_data and redis_data.get("user_photo_url"))
+            has_clothing_photo_redis = bool(redis_data and redis_data.get("clothing_photo_url"))
+            
+            # Используем данные из Redis или БД
+            user_photo_status = "✅ Да" if (user_photo_count > 0 or has_user_photo_redis) else "❌ Нет"
+            clothing_photo_status = "✅ Да" if (clothing_count > 0 or has_clothing_photo_redis) else "❌ Нет"
+            
             # Формируем информацию о профиле
             if db_user:
                 subscription_info = "🆓 Бесплатная" if db_user.subscription_type == "free" else f"💎 {db_user.subscription_type.title()}"
@@ -171,10 +182,10 @@ async def profile_command(message: Message, state: FSMContext):
 📅 <b>Дата регистрации:</b> {created_at}
 
 📸 <b>Загруженные фото:</b>
-• Пользователь: {'✅ Да' if user_photo_count > 0 else '❌ Нет'}
-• Одежда: {'✅ Да' if clothing_count > 0 else '❌ Нет'}
+• Пользователь: {user_photo_status}
+• Одежда: {clothing_photo_status}
 
-{'✅ Профиль готов к использованию!' if user_photo_count > 0 and clothing_count > 0 else '⚠️ Загрузи фото для создания профиля'}
+{'✅ Профиль готов к использованию!' if (user_photo_count > 0 or has_user_photo_redis) and (clothing_count > 0 or has_clothing_photo_redis) else '⚠️ Загрузи фото для создания профиля'}
             """
             
             await message.answer(

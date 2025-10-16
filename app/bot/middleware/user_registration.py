@@ -91,18 +91,28 @@ class UserRegistrationMiddleware(BaseMiddleware):
         return user
     
     async def save_user_to_redis(self, telegram_user_id: int, user: User):
-        """Сохранить данные пользователя в Redis"""
+        """Сохранить данные пользователя в Redis (НЕ перезаписывая существующие)"""
         try:
             from app.services.redis_service import redis_service
             
-            user_data = {
+            # Получаем существующие данные из Redis
+            existing_data = await redis_service.get_user_data(telegram_user_id) or {}
+            logger.info(f"Existing Redis data for user {telegram_user_id}: {existing_data}")
+            
+            # Обновляем только базовые поля, сохраняя URL фото и другие данные
+            updated_data = {
                 "telegram_id": user.telegram_id,
                 "username": user.username,
                 "first_name": user.first_name,
                 "subscription_type": user.subscription_type.value if user.subscription_type else "free",
             }
-            await redis_service.set_user_data(telegram_user_id, user_data)
-            logger.info(f"User {telegram_user_id} data saved to Redis")
+            
+            # Объединяем существующие данные с новыми (существующие имеют приоритет)
+            final_data = {**updated_data, **existing_data}
+            logger.info(f"Final Redis data for user {telegram_user_id}: {final_data}")
+            
+            await redis_service.set_user_data(telegram_user_id, final_data)
+            logger.info(f"User {telegram_user_id} data updated in Redis (preserving existing data)")
         except Exception as e:
             logger.error(f"Failed to save user {telegram_user_id} to Redis: {e}")
             # Не прерываем работу, если Redis недоступен
