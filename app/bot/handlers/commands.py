@@ -345,10 +345,11 @@ async def test_fashn_command(message: Message, state: FSMContext):
 
 
 async def clear_command(message: Message, state: FSMContext):
-    """Обработчик команды /clear"""
+    """Обработчик команды /clear - очищает фото из БД и данные из Redis"""
     from app.database.async_session import get_async_session
     from app.models.user import User
     from app.models.photo import UserPhoto
+    from app.services.redis_service import redis_service
     from sqlalchemy import select, delete
     
     user = message.from_user
@@ -356,25 +357,26 @@ async def clear_command(message: Message, state: FSMContext):
     try:
         # Удаляем фото из БД
         async with get_async_session() as session:
-            # Сначала получаем пользователя из БД
             result = await session.execute(
                 select(User).where(User.telegram_id == user.id)
             )
             db_user = result.scalar_one_or_none()
             
             if db_user:
-                # Удаляем все фото пользователя по внутреннему ID
                 await session.execute(
                     delete(UserPhoto).where(UserPhoto.user_id == db_user.id)
                 )
                 await session.commit()
-                logger.info(f"User {user.id} (db_id: {db_user.id}) cleared photos from database")
-            else:
-                logger.info(f"User {user.id} not found in database, nothing to clear")
+                logger.info(f"User {user.id} cleared photos from database")
         
+        # Очищаем данные из Redis
+        await redis_service.clear_user_data(user.id)
+        
+        # Очищаем FSM состояние
         await state.clear()
+        
         await message.answer(
-            "🧹 <b>Данные очищены!</b>\n\nВсе загруженные фото и состояния сброшены.\nИспользуй /start для начала работы.",
+            "🧹 <b>Данные очищены!</b>\n\nВсе загруженные фото, кеш и состояния сброшены.\nИспользуй /start для начала работы.",
             reply_markup=MainKeyboard.get_main_menu()
         )
         await state.set_state(UserStates.authorized)
@@ -383,7 +385,7 @@ async def clear_command(message: Message, state: FSMContext):
         logger.error(f"Error clearing data for user {user.id}: {e}")
         await state.clear()
         await message.answer(
-            "🧹 <b>Данные очищены!</b>\n\nВсе загруженные фото и состояния сброшены.\nИспользуй /start для начала работы.",
+            "⚠️ Произошла ошибка при очистке. Попробуй еще раз.",
             reply_markup=MainKeyboard.get_main_menu()
         )
         await state.set_state(UserStates.authorized)

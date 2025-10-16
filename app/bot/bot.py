@@ -1,5 +1,4 @@
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.enums import ParseMode
 import os
 from app.config import settings
@@ -52,26 +51,23 @@ async def create_bot():
     # Инициализируем базу данных
     await init_database()
     
-    # Получаем Redis URL из переменных окружения для Railway
+    # Подключаем Redis ДЛЯ ДАННЫХ (не для FSM)
     redis_url = os.getenv("REDIS_URL", current_settings.redis_url)
     
-    # Проверяем, есть ли Redis URL и не localhost ли это
-    if not redis_url or "localhost" in redis_url or "127.0.0.1" in redis_url:
-        logger.warning("⚠️ Redis URL not configured or points to localhost, using MemoryStorage")
-        from aiogram.fsm.storage.memory import MemoryStorage
-        storage = MemoryStorage()
-    else:
-        # Пытаемся подключиться к Redis
+    if redis_url and "localhost" not in redis_url and "127.0.0.1" not in redis_url:
         try:
             await redis_service.connect()
-            logger.info(f"✅ Connected to Redis: {redis_url}")
-            storage = RedisStorage.from_url(redis_url)
+            logger.info(f"✅ Redis connected for user data: {redis_url}")
         except Exception as e:
             logger.error(f"❌ Failed to connect to Redis: {e}")
-            # В случае ошибки Redis, используем MemoryStorage как fallback
-            from aiogram.fsm.storage.memory import MemoryStorage
-            storage = MemoryStorage()
-            logger.warning("⚠️ Using MemoryStorage as fallback")
+            logger.warning("⚠️ Bot will work without Redis persistence")
+    else:
+        logger.warning("⚠️ Redis URL not configured, data will not persist")
+    
+    # FSM использует MemoryStorage (сбрасывается при деплое)
+    from aiogram.fsm.storage.memory import MemoryStorage
+    storage = MemoryStorage()
+    logger.info("✅ Using MemoryStorage for FSM (states will reset on deploy)")
     
     # Создаем бота
     bot = Bot(

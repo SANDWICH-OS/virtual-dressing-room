@@ -21,7 +21,8 @@ Virtual Try-On Bot построен на основе микросервисно
                               ▼
                        ┌─────────────────┐
                        │     Redis       │
-                       │   (FSM Store)   │
+                       │ (User Data +    │
+                       │  FSM States)    │
                        └─────────────────┘
 ```
 
@@ -46,7 +47,7 @@ Virtual Try-On Bot построен на основе микросервисно
 
 **Компоненты**:
 - `app/services/file_service.py` - Обработка и загрузка файлов
-- `app/services/redis_service.py` - Работа с Redis
+- `app/services/redis_service.py` - Работа с Redis (данные пользователей)
 - `app/services/ai_logging_service.py` - Логирование ИИ запросов
 
 **Технологии**: httpx, cloudinary, redis
@@ -100,6 +101,27 @@ User Action → State Check → Handler → State Update → Response
   Received    State       Action      Set         Update
 ```
 
+### 4. Redis Хранение данных пользователей
+
+```
+User Registration → Save to Redis → Persist across Deploys
+     ↓                    ↓                    ↓
+  Middleware         RedisService         Railway Redis
+  (Auto-register)    (Data Storage)      (Persistent)
+```
+
+**Структура данных в Redis:**
+```json
+{
+  "telegram_id": 123456789,
+  "username": "username", 
+  "first_name": "Name",
+  "subscription_type": "free",
+  "user_photo_url": "https://cloudinary.com/...",
+  "clothing_photo_url": "https://cloudinary.com/..."
+}
+```
+
 ## 🗄️ Модель данных
 
 ### User (Пользователь)
@@ -146,6 +168,16 @@ CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 RAILWAY_ENVIRONMENT=production
 ```
+
+### Redis Configuration
+
+**Назначение**: Хранение данных пользователей с персистентностью при деплоях
+
+**Ключи Redis:**
+- `user:{user_id}:data` - Основные данные пользователя (JSON)
+- `user:{user_id}:generations` - Счетчик генераций (legacy)
+
+**FSM Storage**: MemoryStorage (сбрасывается при деплое для безопасности)
 
 ### Конфигурационные классы
 

@@ -65,6 +65,10 @@ class UserRegistrationMiddleware(BaseMiddleware):
             user.last_name = telegram_user.last_name
             await session.commit()
             logger.info(f"User {telegram_user.id} updated in database")
+            
+            # Обновляем данные в Redis
+            await self.save_user_to_redis(telegram_user.id, user)
+            
             return user
         
         # Создаем нового пользователя
@@ -80,4 +84,25 @@ class UserRegistrationMiddleware(BaseMiddleware):
         await session.refresh(user)
         
         logger.info(f"New user {telegram_user.id} registered in database")
+        
+        # Сохраняем/обновляем базовые данные в Redis
+        await self.save_user_to_redis(telegram_user.id, user)
+        
         return user
+    
+    async def save_user_to_redis(self, telegram_user_id: int, user: User):
+        """Сохранить данные пользователя в Redis"""
+        try:
+            from app.services.redis_service import redis_service
+            
+            user_data = {
+                "telegram_id": user.telegram_id,
+                "username": user.username,
+                "first_name": user.first_name,
+                "subscription_type": user.subscription_type.value if user.subscription_type else "free",
+            }
+            await redis_service.set_user_data(telegram_user_id, user_data)
+            logger.info(f"User {telegram_user_id} data saved to Redis")
+        except Exception as e:
+            logger.error(f"Failed to save user {telegram_user_id} to Redis: {e}")
+            # Не прерываем работу, если Redis недоступен

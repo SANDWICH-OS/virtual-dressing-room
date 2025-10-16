@@ -105,6 +105,64 @@ class RedisService:
         """Увеличить количество генераций пользователя"""
         key = f"user:{user_id}:generations"
         return await self.increment(key, 1)
+    
+    async def get_user_data(self, user_id: int) -> Optional[dict]:
+        """
+        Получить все данные пользователя из Redis
+        
+        Args:
+            user_id: Telegram ID пользователя
+            
+        Returns:
+            dict: Данные пользователя или None если не найдены
+        """
+        key = f"user:{user_id}:data"
+        return await self.get_json(key)
+
+    async def set_user_data(self, user_id: int, data: dict, expire: Optional[int] = None) -> bool:
+        """
+        Сохранить данные пользователя в Redis
+        
+        Args:
+            user_id: Telegram ID пользователя
+            data: Словарь с данными пользователя
+            expire: Время жизни в секундах (None = постоянно)
+            
+        Returns:
+            bool: True если успешно сохранено
+        """
+        key = f"user:{user_id}:data"
+        return await self.set_json(key, data, expire=expire)
+
+    async def update_user_field(self, user_id: int, field: str, value: Any) -> bool:
+        """Обновить конкретное поле пользователя"""
+        user_data = await self.get_user_data(user_id) or {}
+        user_data[field] = value
+        return await self.set_user_data(user_id, user_data)
+
+    async def get_user_field(self, user_id: int, field: str, default: Any = None) -> Any:
+        """Получить конкретное поле пользователя"""
+        user_data = await self.get_user_data(user_id)
+        if user_data:
+            return user_data.get(field, default)
+        return default
+
+    async def clear_user_data(self, user_id: int) -> bool:
+        """Полная очистка всех данных пользователя из Redis"""
+        keys_to_delete = [
+            f"user:{user_id}:data",
+            f"user:{user_id}:generations",  # старый ключ, если был
+        ]
+        
+        deleted_count = 0
+        for key in keys_to_delete:
+            if await self.exists(key):
+                await self.delete(key)
+                deleted_count += 1
+        
+        from loguru import logger
+        logger.info(f"Cleared {deleted_count} Redis keys for user {user_id}")
+        return deleted_count > 0
 
 
 # Глобальный экземпляр

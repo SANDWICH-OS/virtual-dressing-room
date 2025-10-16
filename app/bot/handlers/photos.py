@@ -61,6 +61,14 @@ async def handle_user_photo(message: Message, photo: PhotoSize, state: FSMContex
                 await file_service.save_photo_to_database(
                     session, db_user.id, cloudinary_url, PhotoType.USER_PHOTO, public_id
                 )
+                
+                # Сохраняем URL фото в Redis
+                try:
+                    from app.services.redis_service import redis_service
+                    await redis_service.update_user_field(user.id, "user_photo_url", cloudinary_url)
+                    logger.info(f"User {user.id} photo URL saved to Redis")
+                except Exception as e:
+                    logger.error(f"Failed to save photo URL to Redis for user {user.id}: {e}")
             else:
                 await message.answer("❌ Пользователь не найден в базе данных.")
                 return
@@ -110,6 +118,14 @@ async def handle_clothing_photo(message: Message, photo: PhotoSize, state: FSMCo
                 await file_service.save_photo_to_database(
                     session, db_user.id, cloudinary_url, PhotoType.CLOTHING, public_id
                 )
+                
+                # Сохраняем URL фото в Redis
+                try:
+                    from app.services.redis_service import redis_service
+                    await redis_service.update_user_field(user.id, "clothing_photo_url", cloudinary_url)
+                    logger.info(f"User {user.id} clothing photo URL saved to Redis")
+                except Exception as e:
+                    logger.error(f"Failed to save clothing photo URL to Redis for user {user.id}: {e}")
             else:
                 await message.answer("❌ Пользователь не найден в базе данных.")
                 return
